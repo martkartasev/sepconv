@@ -33,12 +33,12 @@ def download_davis(dest="dataset"):
 
     return output_dir
 
-def get_training_set(upscale_factor):
+def get_training_set():
     root_dir = download_davis()
     # TODO: ...
     return None
 
-def get_test_set(upscale_factor):
+def get_test_set():
     root_dir = download_davis()
     # TODO: ...
     return None
