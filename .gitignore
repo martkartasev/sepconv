@@ -1,5 +1,6 @@
 # Project-specific
 dataset/
+src/config.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

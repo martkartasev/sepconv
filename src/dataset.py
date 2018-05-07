@@ -10,6 +10,7 @@ from os.path import exists, join, basename, isdir
 from os import makedirs, remove, listdir
 from six.moves import urllib
 from PIL import Image
+import config
 import zipfile
 
 def load_img(file_path):
@@ -71,7 +72,10 @@ class DatasetFromFolder(data.Dataset):
     def __len__(self):
         return len(self.image_tuples)
 
-def download_davis(dest="./dataset"):
+def download_davis(dest=None):
+
+    if dest is None:
+        dest = config.DATASET_DIR
 
     output_dir = join(dest, "DAVIS")
 
@@ -108,11 +112,11 @@ def _target_transform(crop_size):
 def get_training_set():
     root_dir = download_davis()
     jpegs_dir = join(root_dir, "JPEGImages/480p")
-    crop_size = 128
+    crop_size = config.CROP_SIZE
     return DatasetFromFolder(jpegs_dir, _input_transform(crop_size), _target_transform(crop_size))
 
 def get_test_set():
     root_dir = download_davis()
     jpegs_dir = join(root_dir, "JPEGImages/480p")
-    crop_size = 128
+    crop_size = config.CROP_SIZE
     return DatasetFromFolder(jpegs_dir, _input_transform(crop_size), _target_transform(crop_size))
