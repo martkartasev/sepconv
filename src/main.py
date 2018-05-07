@@ -31,6 +31,23 @@ model = Net().to(device)
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters())
 
-# ...
+def train(epoch):
+    epoch_loss = 0
+    for iteration, batch in enumerate(training_data_loader, 1):
+        input, target = batch[0].to(device), batch[1].to(device)
+
+        optimizer.zero_grad()
+        loss = criterion(model(input), target)
+        epoch_loss += loss.item()
+        loss.backward()
+        optimizer.step()
+
+        print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss.item()))
+
+    print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(training_data_loader)))
+
+
+for epoch in range(1, 10 + 1):
+    train(epoch)
 
 print('Done')
