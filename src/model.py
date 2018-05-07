@@ -5,7 +5,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-import torch.nn.modules.loss
+from torch.nn.modules.loss import _Loss, _assert_no_grad
 
 class Net(nn.Module):
 
@@ -25,6 +25,7 @@ class Net(nn.Module):
         return x
 
     def _initialize_weights(self):
+        print('_initialize_weights')
         # init.orthogonal_(self.conv1.weight, init.calculate_gain('relu'))
         # init.orthogonal_(self.conv2.weight, init.calculate_gain('relu'))
         # init.orthogonal_(self.conv3.weight, init.calculate_gain('relu'))
@@ -32,12 +33,11 @@ class Net(nn.Module):
 
 class CustomLoss(_Loss):
 
-    def __init__(self, size_average=True, reduce=True):
-        super(CustomLoss, self).__init__(size_average, reduce)
+    def __init__(self, size_average=True):
+        super(CustomLoss, self).__init__(size_average)
 
     def forward(self, input, target):
         _assert_no_grad(target)
         # ...
         # Return the loss as a Tensor
         return None
-        
