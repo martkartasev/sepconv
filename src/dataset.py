@@ -4,45 +4,68 @@
 
 import torch.utils.data as data
 import torch
+import numpy as np
 from torchvision.transforms import Compose, CenterCrop, ToTensor
-from os.path import exists, join, basename
+from os.path import exists, join, basename, isdir
 from os import makedirs, remove, listdir
 from six.moves import urllib
 from PIL import Image
 import zipfile
 
 def load_img(file_path):
-    img = Image.open(file_path).convert('RGB')
-    x, _, _ = img.split()
-    return x
+    return Image.open(file_path).convert('RGB')
+
+def is_image(filename):
+    return any(filename.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
 
 class DatasetFromFolder(data.Dataset):
 
-    def __init__(self, image_dir, input_transform, target_transform):
+    def __init__(self, root_dir, input_transform, target_transform):
         super(DatasetFromFolder, self).__init__()
 
-        paths = listdir(image_dir)
+        video_dirs = [join(root_dir, x) for x in listdir(root_dir)]
+        video_dirs = [x for x in video_dirs if isdir(x)]
+
         tuples = []
-        for i in range(len(paths) // 3):
-            x1, t, x2 = paths[i*3], paths[i*3 +1], paths[i*3 +2]
-            x1, t, x2 = join(image_dir, x1), join(image_dir, t), join(image_dir, x2)
-            tuples.append((x1, t, x2))
+        for video_dir in video_dirs:
+
+            frame_paths = [join(video_dir, x) for x in listdir(video_dir)]
+            frame_paths = [x for x in frame_paths if is_image(x)]
+
+            for i in range(len(frame_paths) // 3):
+                x1, t, x2 = frame_paths[i*3], frame_paths[i*3 +1], frame_paths[i*3 +2]
+                tuples.append((x1, t, x2))
 
         self.image_tuples = tuples
         self.input_transform = input_transform
         self.target_transform = target_transform
 
+    def _pil_transform(self, x):
+        """
+        :param x: PIL.Image object
+        :return: Normalized torch tensor of shape (channels, height, width)
+        """
+        # Channels are the third dim of a PIL.Image,
+        # but we want to be able to index it by channel first,
+        # so we use np.rollaxis to get an array of shape (3, h, w)
+        return torch.from_numpy(np.rollaxis(np.asarray(x) / 255.0, 2))
+
     def __getitem__(self, index):
-        touple = self.image_tuples[index]
-        x1, target, x2 = load_img(touple[0]), load_img(touple[1]), load_img(touple[2])
+        tup = self.image_tuples[index]
+        x1, target, x2 = (load_img(x) for x in tup)
 
         if self.input_transform:
             x1 = self.input_transform(x1)
             x2 = self.input_transform(x2)
+
         if self.target_transform:
             target = self.target_transform(target)
 
-        input = torch.tensor([x1, x2])
+        x1 = self._pil_transform(x1)
+        x2 = self._pil_transform(x2)
+        target = self._pil_transform(target)
+
+        input = torch.cat((x1, x2), dim=0)
         return input, target
 
     def __len__(self):
@@ -77,10 +100,7 @@ def download_davis(dest="./dataset"):
     return output_dir
 
 def _input_transform(crop_size):
-    return Compose([
-        CenterCrop(crop_size),
-        ToTensor(),
-    ])
+    return CenterCrop(crop_size)
 
 def _target_transform(crop_size):
     return _input_transform(crop_size)
