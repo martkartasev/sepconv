@@ -6,6 +6,9 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 from torch.nn.modules.loss import _Loss, _assert_no_grad
+from separable_convolution import SeparableConvolutionSlow
+from libs.sepconv import SeparableConvolution
+import config
 
 class Net(nn.Module):
 
@@ -14,7 +17,13 @@ class Net(nn.Module):
 
         # self.relu = nn.ReLU()
         # self.conv1 = nn.Conv2d(1, 64, (5, 5), (1, 1), (2, 2))
-        # self.conv2 = nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1))    
+        # self.conv2 = nn.Conv2d(64, 64, (3, 3), (1, 1), (1, 1))
+
+        if torch.cuda.is_available():
+            self.separable_conv = SeparableConvolution()
+        else:
+            self.separable_conv = SeparableConvolutionSlow()
+
         self._initialize_weights()
 
     def forward(self, x):

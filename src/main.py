@@ -34,7 +34,7 @@ testing_data_loader = DataLoader(dataset=test_set, num_workers=config.NUM_WORKER
 
 print('===> Building model...')
 model = Net().to(device)
-criterion = nn.MSELoss()
+l1_loss = nn.L1Loss()
 optimizer = optim.Adam(model.parameters())
 
 def train(epoch):
@@ -43,7 +43,7 @@ def train(epoch):
         input, target = batch[0].to(device), batch[1].to(device)
 
         optimizer.zero_grad()
-        loss = criterion(model(input), target)
+        loss = l1_loss(model(input), target)
         epoch_loss += loss.item()
         loss.backward()
         optimizer.step()
