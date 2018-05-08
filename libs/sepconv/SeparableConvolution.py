@@ -4,8 +4,8 @@
 #
 
 import torch
-import sepconv._ext as _ext
-import sepconv._ext.cunnex
+import libs.sepconv._ext as _ext
+import libs.sepconv._ext.cunnex
 
 class SeparableConvolution(torch.autograd.Function):
 	def __init__(self):

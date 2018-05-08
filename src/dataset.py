@@ -10,7 +10,7 @@ from os.path import exists, join, basename, isdir
 from os import makedirs, remove, listdir
 from six.moves import urllib
 from PIL import Image
-import config
+import src.config as config
 import zipfile
 
 def load_img(file_path):

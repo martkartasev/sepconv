@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 from torch.nn.modules.loss import _Loss, _assert_no_grad
-from separable_convolution import SeparableConvolutionSlow
+from src.separable_convolution import SeparableConvolutionSlow
 from libs.sepconv import SeparableConvolution
-import config
+import src.config as config
 
 class Net(nn.Module):
 

@@ -1,6 +1,6 @@
 import torch as t
 
-from config import OUTPUT_1D_KERNEL_SIZE as filter_size
+from src.config import OUTPUT_1D_KERNEL_SIZE as filter_size
 
 
 class SeparableConvolutionSlow(t.autograd.Function):

@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.optim as optim
-import config
-from model import Net, CustomLoss
-from dataset import get_training_set, get_test_set
+import src.config as config
+from src.model import Net, CustomLoss
+from src.dataset import get_training_set, get_test_set
 
 
 if config.ALWAYS_CPU:
