@@ -1,0 +1,12 @@
+## Requirements ##
+
+# General
+numpy
+Pillow
+
+# Torch
+torch >= 0.4.0
+torchvision
+
+# Required by the sepconv lib
+cffi
