@@ -38,3 +38,9 @@ DATASET_DIR = './dataset'
 
 # Force torch to run on CPU even if CUDA is available
 ALWAYS_CPU: bool = False
+
+# Path to the outout directory where the model checkpoins should be stored
+OUTPUT_DIR: str = './out'
+
+# Whether or not the model parameters should be written to disk at each epoch
+SAVE_CHECKPOINS: bool = False
