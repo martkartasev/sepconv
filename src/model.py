@@ -18,7 +18,7 @@ class Net(nn.Module):
 
         self.relu = nn.ReLU()
         self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(1, 1))
-        self.upsamp = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.upsamp = nn.Upsample(scale_factor=2, mode='bilinear')
 
         self.conv32 = nn.Conv2d(6, 32, kernel_size=(3, 3), stride=(1, 1))
         self.conv64 = nn.Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1))
@@ -46,45 +46,67 @@ class Net(nn.Module):
         i1 = x[:, :3]
         i2 = x[:, 3:6]
 
+        print('_start_pass')
         x = self.relu(self.conv32(x))
         x = self.pool(x)
+
         x = self.relu(self.conv64(x))
         x = self.pool(x)
+        print('_conv_64')
 
         x = self.relu(self.conv128(x))
         x = self.pool(x)
+        print('_conv_128')
 
         x = self.relu(self.conv256(x))
         x = self.pool(x)
 
+        print('_conv_256')
+
         x = self.relu(self.conv512(x))
         x = self.pool(x)
+
+        print('_conv_512')
 
         x = self.relu(self.conv512x512(x))
         x = self.pool(x)
 
+        print('_conv_512x512')
+
+
         x = self.upsamp(x)
         x = self.relu(self.upconv256(x))
+
+        print('_up_conv256')
 
         x = self.upsamp(x)
         x = self.relu(self.upconv128(x))
 
+        print('_up_conv128')
         x = self.upsamp(x)
         x = self.relu(self.upconv64(x))
         x = self.upsamp(x)
 
+        print('_up_conv64')
         k2h = self.relu(self.upconv51_1(x))
         k2h = self.upsamp(k2h)
+
+        print('_up_conv_51_1')
 
         k2v = self.relu(self.upconv51_2(x))
         k2v = self.upsamp(k2v)
 
+        print('_up_conv_51_2')
+
         k1h = self.relu(self.upconv51_3(x))
         k1h = self.upsamp(k1h)
+
+        print('_up_conv_51_3')
 
         k1v = self.relu(self.upconv51_4(x))
         k1v = self.upsamp(k1v)
 
+        print('_up_conv_51_4')
         return self.separable_conv(i2, k2v, k2h) + self.separable_conv(i1, k1v, k1h)
 
     def _initialize_weights(self):

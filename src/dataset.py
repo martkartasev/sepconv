@@ -49,7 +49,7 @@ class DatasetFromFolder(data.Dataset):
         # Channels are the third dim of a PIL.Image,
         # but we want to be able to index it by channel first,
         # so we use np.rollaxis to get an array of shape (3, h, w)
-        return torch.from_numpy(np.rollaxis(np.asarray(x) / 255.0, 2))
+        return torch.from_numpy(np.rollaxis(np.asarray(x) / 255.0, 2)).float()
 
     def __getitem__(self, index):
         tup = self.image_tuples[index]
