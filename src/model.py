@@ -50,7 +50,8 @@ class Net(nn.Module):
         else:
             self.separable_conv = SeparableConvolutionSlow()
 
-        self._initialize_weights()
+        print('_initialize_weights')
+        self.apply(weight_init)
 
     def forward(self, x):
         i1 = x[:, :3]
@@ -120,23 +121,6 @@ class Net(nn.Module):
         print('_up_conv_51_4')
         return self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
 
-    def _initialize_weights(self):
-        print('_initialize_weights')
-        gain = init.calculate_gain('relu')
-        init.orthogonal_(self.conv32.weight, gain)
-        init.orthogonal_(self.conv64.weight, gain)
-        init.orthogonal_(self.conv128.weight, gain)
-        init.orthogonal_(self.conv256.weight, gain)
-        init.orthogonal_(self.conv512.weight, gain)
-        init.orthogonal_(self.conv512x512.weight, gain)
-        init.orthogonal_(self.upconv64.weight, gain)
-        init.orthogonal_(self.upconv128.weight, gain)
-        init.orthogonal_(self.upconv256.weight, gain)
-        init.orthogonal_(self.upconv51_1.weight, gain)
-        init.orthogonal_(self.upconv51_2.weight, gain)
-        init.orthogonal_(self.upconv51_3.weight, gain)
-        init.orthogonal_(self.upconv51_4.weight, gain)
-
     def conv_module(self, in_channels, out_channels, kernel, stride, padding):
         return torch.nn.Sequential(
             torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), torch.nn.ReLU(),
@@ -158,6 +142,11 @@ class Net(nn.Module):
             upsample, torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), torch.nn.ReLU(),
         )
 
+
+def weight_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        init.orthogonal_(m.weight, init.calculate_gain('relu'))
 
 class CustomLoss(_Loss):
 
