@@ -47,6 +47,9 @@ class DatasetFromFolder(data.Dataset):
                 x1, t, x2 = frame_paths[i*3], frame_paths[i*3 +1], frame_paths[i*3 +2]
                 tuples.append((x1, t, x2))
 
+        if config.MAX_TRAINING_SAMPLES is not None:
+            tuples = tuples[:config.MAX_TRAINING_SAMPLES]
+
         self.image_tuples = tuples
         self.input_transform = input_transform
         self.target_transform = target_transform

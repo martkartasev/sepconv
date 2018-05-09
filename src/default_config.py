@@ -23,7 +23,6 @@ OUTPUT_1D_KERNEL_SIZE: int = 51
 BATCH_SIZE: int = 100
 
 # TODO: Add description
-# TODO: Implement
 MAX_TRAINING_SAMPLES: int = 10_000
 
 # Number of workers of the torch.utils.data.DataLoader
