@@ -16,32 +16,34 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
 
-        conv_kernel_size = (3, 3)
+        conv_kernel = (3, 3)
         conv_stride = (1, 1)
         conv_padding = 1
-        sep_kernel_size = config.OUTPUT_1D_KERNEL_SIZE
+        sep_kernel = config.OUTPUT_1D_KERNEL_SIZE
 
-        self.relu = nn.ReLU()
         self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
         self.upsamp = nn.Upsample(scale_factor=2, mode='bilinear')
 
-        self.conv32 = nn.Conv2d(6, 32, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.conv64 = nn.Conv2d(32, 64, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.conv128 = nn.Conv2d(64, 128, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.conv256 = nn.Conv2d(128, 256, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.conv512 = nn.Conv2d(256, 512, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.conv512x512 = nn.Conv2d(512, 512, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.upconv256 = nn.Conv2d(512, 256, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.upconv128 = nn.Conv2d(256, 128, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.upconv64 = nn.Conv2d(128, 64, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-
-        self.upconv51_1 = nn.Conv2d(64, sep_kernel_size, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.upconv51_2 = nn.Conv2d(64, sep_kernel_size, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.upconv51_3 = nn.Conv2d(64, sep_kernel_size, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.upconv51_4 = nn.Conv2d(64, sep_kernel_size, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.conv32 = self.conv_module(6, 32, conv_kernel, conv_stride, conv_padding)
+        self.conv64 = self.conv_module(32, 64, conv_kernel, conv_stride, conv_padding)
+        self.conv128 = self.conv_module(64, 128, conv_kernel, conv_stride, conv_padding)
+        self.conv256 = self.conv_module(128, 256, conv_kernel, conv_stride, conv_padding)
+        self.conv512 = self.conv_module(256, 512, conv_kernel, conv_stride, conv_padding)
+        self.conv512x512 = self.conv_module(512, 512, conv_kernel, conv_stride, conv_padding)
+        self.upsamp512 = self.upsample(512, 512, conv_kernel, conv_stride, conv_padding, self.upsamp)
+        self.upconv256 = self.conv_module(512, 256, conv_kernel, conv_stride, conv_padding)
+        self.upsamp256 = self.upsample(256, 256, conv_kernel, conv_stride, conv_padding, self.upsamp)
+        self.upconv128 = self.conv_module(256, 128, conv_kernel, conv_stride, conv_padding)
+        self.upsamp128 = self.upsample(128, 128, conv_kernel, conv_stride, conv_padding, self.upsamp)
+        self.upconv64 = self.conv_module(128, 64, conv_kernel, conv_stride, conv_padding)
+        self.upsamp64 = self.upsample(64, 64, conv_kernel, conv_stride, conv_padding, self.upsamp)
+        self.upconv51_1 = self.kernel_conv(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp)
+        self.upconv51_2 = self.kernel_conv(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp)
+        self.upconv51_3 = self.kernel_conv(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp)
+        self.upconv51_4 = self.kernel_conv(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp)
 
         # FIXME: Use proper padding
-        self.pad = nn.ConstantPad2d(sep_kernel_size // 2, 0.0)
+        self.pad = nn.ConstantPad2d(sep_kernel // 2, 0.0)
 
         if torch.cuda.is_available():
             self.separable_conv = SeparableConvolution()
@@ -55,63 +57,64 @@ class Net(nn.Module):
         i2 = x[:, 3:6]
 
         print('_start_pass')
-        x = self.relu(self.conv32(x))
+        x = self.conv32(x)
         x = self.pool(x)
 
-        x64 = self.relu(self.conv64(x))
+        x64 = self.conv64(x)
         x128 = self.pool(x64)
         print('_conv_64')
 
-        x128 = self.relu(self.conv128(x128))
+        x128 = self.conv128(x128)
         x256 = self.pool(x128)
         print('_conv_128')
 
-        x256 = self.relu(self.conv256(x256))
+        x256 = self.conv256(x256)
         x512 = self.pool(x256)
         print('_conv_256')
 
-        x512 = self.relu(self.conv512(x512))
+        x512 = self.conv512(x512)
         x = self.pool(x512)
         print('_conv_512')
 
-        x = self.relu(self.conv512x512(x))
+        x = self.conv512x512(x)
         print('_conv_512x512')
 
         # -----------------------------------------------------------------------
 
-        x = self.upsamp(x)
+        x = self.upsamp512(x)
         x += x512
-        x = self.relu(self.upconv256(x))
+        x = self.upconv256(x)
 
         print('_up_conv256')
 
-        x = self.upsamp(x)
+        x = self.upsamp256(x)
         x += x256
-        x = self.relu(self.upconv128(x))
+        x = self.upconv128(x)
 
         print('_up_conv128')
-        x = self.upsamp(x)
+        x = self.upsamp128(x)
         x += x128
-        x = self.relu(self.upconv64(x))
+        x = self.upconv64(x)
+
+        x = self.upsamp64(x)
         x += x64
-        x = self.upsamp(x)
+        print('_up_conv64')
 
         # --------------------------------
 
-        print('_up_conv64')
-        k2h = self.relu(self.upconv51_1(x))
+        k2h = self.upconv51_1(x)
         k2h = self.upsamp(k2h)
         print('_up_conv_51_1')
 
-        k2v = self.relu(self.upconv51_2(x))
+        k2v = self.upconv51_2(x)
         k2v = self.upsamp(k2v)
         print('_up_conv_51_2')
 
-        k1h = self.relu(self.upconv51_3(x))
+        k1h = self.upconv51_3(x)
         k1h = self.upsamp(k1h)
         print('_up_conv_51_3')
 
-        k1v = self.relu(self.upconv51_4(x))
+        k1v = self.upconv51_4(x)
         k1v = self.upsamp(k1v)
         print('_up_conv_51_4')
 
@@ -137,6 +140,27 @@ class Net(nn.Module):
         init.orthogonal_(self.upconv51_2.weight, gain)
         init.orthogonal_(self.upconv51_3.weight, gain)
         init.orthogonal_(self.upconv51_4.weight, gain)
+
+    def conv_module(self, in_channels, out_channels, kernel, stride, padding):
+        return torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), torch.nn.ReLU(),
+            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), torch.nn.ReLU(),
+            torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), torch.nn.ReLU(),
+        )
+
+    def kernel_conv(self, in_channels, out_channels, kernel, stride, padding, upsample):
+        return torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), torch.nn.ReLU(),
+            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), torch.nn.ReLU(),
+            torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), torch.nn.ReLU(),
+            upsample,
+            torch.nn.Conv2d(out_channels, out_channels, kernel, stride, padding)
+        )
+
+    def upsample(self, in_channels, out_channels, kernel, stride, padding, upsample):
+        return torch.nn.Sequential(
+            upsample, torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), torch.nn.ReLU(),
+        )
 
 
 class CustomLoss(_Loss):
