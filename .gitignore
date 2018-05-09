@@ -2,6 +2,7 @@
 dataset/
 src/config.py
 _ext/
+out/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

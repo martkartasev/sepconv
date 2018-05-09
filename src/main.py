@@ -6,9 +6,15 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.optim as optim
+from os.path import exists, join as join_paths
+from os import makedirs
+from timeit import default_timer as timer
 import src.config as config
 from src.model import Net, CustomLoss
 from src.dataset import get_training_set, get_test_set
+
+
+# ----------------------------------------------------------------------
 
 if config.ALWAYS_CPU:
     print("===> ALWAYS_CPU is True, proceeding with CPU...")
@@ -23,6 +29,9 @@ else:
 if config.SEED is not None:
     torch.manual_seed(config.SEED)
 
+
+# ----------------------------------------------------------------------
+
 print('===> Loading datasets...')
 train_set = get_training_set()
 test_set = get_test_set()
@@ -34,6 +43,8 @@ model = Net().to(device)
 l1_loss = nn.L1Loss()
 optimizer = optim.Adamax(model.parameters(), lr=0.001)
 
+
+# ----------------------------------------------------------------------
 
 def train(epoch):
     epoch_loss = 0
@@ -47,11 +58,37 @@ def train(epoch):
         optimizer.step()
 
         print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss.item()))
-
     print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(training_data_loader)))
 
+def test():
+    error = 0.0
+    with torch.no_grad():
+        for batch in testing_data_loader:
+            input, target = batch[0].to(device), batch[1].to(device)
+            output = model(input)
+            # TODO: compute error
+            error = 0.0
+    print("===> Test error: {:.4f}".format(error))
+
+def save_checkpoint(epoch):
+    model_out_path = "model_epoch_{}.pth".format(epoch)
+    model_out_path = join_paths(config.OUTPUT_DIR, model_out_path)
+    if not exists(config.OUTPUT_DIR):
+        makedirs(config.OUTPUT_DIR)
+    torch.save(model, model_out_path)
+    print("Checkpoint saved to {}".format(model_out_path))
+
+
+# ----------------------------------------------------------------------
+
+tick_t = timer()
 
 for epoch in range(1, config.EPOCHS + 1):
     train(epoch)
+    if config.SAVE_CHECKPOINS:
+        save_checkpoint(epoch)
+    test()
 
-print('Done')
+tock_t = timer()
+
+print("Done. Took ~{}s".format(round(tock_t - tick_t)))
