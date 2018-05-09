@@ -51,6 +51,7 @@ class Net(nn.Module):
         else:
             self.separable_conv = SeparableConvolutionSlow()
 
+
         print('_initialize_weights')
         self.apply(weight_init)
 
@@ -145,8 +146,7 @@ class Net(nn.Module):
 
 
 def weight_init(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
+    if isinstance(m, nn.Conv2d):
         init.orthogonal_(m.weight, init.calculate_gain('relu'))
 
 class CustomLoss(_Loss):
