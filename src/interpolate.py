@@ -3,13 +3,18 @@
 #
 
 import torch
+from torchvision.transforms import CenterCrop
 import argparse
 import numpy as np
 from PIL import Image
 from timeit import default_timer as timer
+from src.config import CROP_SIZE
 
+
+_center_crop = CenterCrop(CROP_SIZE)
 
 def _img_trasform(img):
+    img = _center_crop(img)
     # MUST mimic the behavior of pil_transform() in dataset.py
     return torch.from_numpy(np.rollaxis(np.asarray(img) / 255.0, 2)).float()
 
@@ -17,17 +22,24 @@ def interpolate(model, frame1, frame2):
 
     frame1 = _img_trasform(frame1)
     frame2 = _img_trasform(frame2)
-    input = torch.cat((frame1, frame2), dim=0)
+    _input = torch.cat((frame1, frame2), dim=0)
+
+    # _input must be 4D (dim=0 being the index within the batch)
+    _input = _input.view(1, _input.size(0), _input.size(1), _input.size(2))
 
     if torch.cuda.is_available():
-        input.cuda()
+        _input.cuda()
         model.cuda()
 
-    output = model(input).cpu()
-    output = output.detach().numpy()
+    output = model(_input).cpu()
+    output = output.detach().numpy()[0]
     output *= 255.0
     output = output.clip(0, 255)
+
+    # PIL.Image wants the channel as the last dimension
+    output = np.rollaxis(output, 0, 3)
     frame_out = Image.fromarray(output, mode='RGB')
+
     return frame_out
 
 def interpolate_f(model, path1, path2):
