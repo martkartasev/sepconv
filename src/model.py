@@ -35,7 +35,6 @@ class Net(nn.Module):
         self.upconv51_3 = nn.Conv2d(64, 51, kernel_size=(3, 3), stride=(1, 1))
         self.upconv51_4 = nn.Conv2d(64, 51, kernel_size=(3, 3), stride=(1, 1))
 
-
         if torch.cuda.is_available():
             self.separable_conv = SeparableConvolution()
         else:
@@ -90,10 +89,19 @@ class Net(nn.Module):
 
     def _initialize_weights(self):
         print('_initialize_weights')
-        # init.orthogonal_(self.conv1.weight, init.calculate_gain('relu'))
-        # init.orthogonal_(self.conv2.weight, init.calculate_gain('relu'))
-        # init.orthogonal_(self.conv3.weight, init.calculate_gain('relu'))
-        # init.orthogonal_(self.conv4.weight)
+        init.orthogonal_(self.conv32.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.conv64.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.conv128.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.conv256.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.conv512.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.conv512x512.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.upconv64.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.upconv128.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.upconv256.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.upconv51_1.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.upconv51_2.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.upconv51_3.weight, init.calculate_gain('relu'))
+        init.orthogonal_(self.upconv51_4.weight, init.calculate_gain('relu'))
 
 class CustomLoss(_Loss):
 
