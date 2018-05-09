@@ -53,21 +53,21 @@ class Net(nn.Module):
         x = self.relu(self.conv32(x))
         x = self.pool(x)
 
-        x = self.relu(self.conv64(x))
-        x = self.pool(x)
+        x64 = self.relu(self.conv64(x))
+        x128 = self.pool(x64)
         print('_conv_64')
 
-        x = self.relu(self.conv128(x))
-        x = self.pool(x)
+        x128 = self.relu(self.conv128(x128))
+        x256 = self.pool(x128)
         print('_conv_128')
 
-        x = self.relu(self.conv256(x))
-        x = self.pool(x)
+        x256 = self.relu(self.conv256(x256))
+        x512 = self.pool(x256)
 
         print('_conv_256')
 
-        x = self.relu(self.conv512(x))
-        x = self.pool(x)
+        x512 = self.relu(self.conv512(x512))
+        x = self.pool(x512)
 
         print('_conv_512')
 
@@ -76,18 +76,21 @@ class Net(nn.Module):
 
         print('_conv_512x512')
 
-
         x = self.upsamp(x)
+        x += x512
         x = self.relu(self.upconv256(x))
 
         print('_up_conv256')
 
         x = self.upsamp(x)
+        x += x256
         x = self.relu(self.upconv128(x))
 
         print('_up_conv128')
         x = self.upsamp(x)
+        x += x128
         x = self.relu(self.upconv64(x))
+        x += x64
         x = self.upsamp(x)
 
         print('_up_conv64')
@@ -128,6 +131,7 @@ class Net(nn.Module):
         init.orthogonal_(self.upconv51_2.weight, gain)
         init.orthogonal_(self.upconv51_3.weight, gain)
         init.orthogonal_(self.upconv51_4.weight, gain)
+
 
 class CustomLoss(_Loss):
 
