@@ -9,6 +9,7 @@ from torch.nn.modules.loss import _Loss, _assert_no_grad
 from src.separable_convolution import SeparableConvolutionSlow
 from libs.sepconv import SeparableConvolution
 import src.config as config
+import src.interpolate as interpol
 
 
 class Net(nn.Module):
@@ -120,6 +121,9 @@ class Net(nn.Module):
         padded_i2 = self.pad(i2)
         padded_i1 = self.pad(i1)
 
+        # FIX/ME: DELETE!!
+        # return (k2h + k2v + k1h + k1v)[:, :3]
+
         print('_up_conv_51_4')
         return self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
 
@@ -143,6 +147,12 @@ class Net(nn.Module):
         return torch.nn.Sequential(
             upsample, torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), relu,
         )
+
+    def interpolate(self, *args):
+        return interpol.interpolate(self, *args)
+
+    def interpolate_f(self, *args):
+        return interpol.interpolate_f(self, *args)
 
 
 def weight_init(m):

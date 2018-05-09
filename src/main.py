@@ -54,7 +54,9 @@ def train(epoch):
         optimizer.zero_grad()
         loss = l1_loss(model(input), target)
         epoch_loss += loss.item()
+        print('Computing gradients...')
         loss.backward()
+        print('Gradients ready.')
         optimizer.step()
 
         print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss.item()))
@@ -92,3 +94,12 @@ for epoch in range(1, config.EPOCHS + 1):
 tock_t = timer()
 
 print("Done. Took ~{}s".format(round(tock_t - tick_t)))
+
+#
+# In order to interpolate two frames and write the output as an image file:
+#
+# model.interpolate_f(
+#   '/path/to/frame_00001.jpg',
+#   '/path/to/frame_00003.jpg'
+# ).save('/path/to/frame_00002_star.jpg')
+#
