@@ -103,19 +103,15 @@ class Net(nn.Module):
         # --------------------------------
 
         k2h = self.upconv51_1(x)
-        k2h = self.upsamp(k2h)
         print('_up_conv_51_1')
 
         k2v = self.upconv51_2(x)
-        k2v = self.upsamp(k2v)
         print('_up_conv_51_2')
 
         k1h = self.upconv51_3(x)
-        k1h = self.upsamp(k1h)
         print('_up_conv_51_3')
 
         k1v = self.upconv51_4(x)
-        k1v = self.upsamp(k1v)
         print('_up_conv_51_4')
 
         padded_i2 = self.pad(i2)
