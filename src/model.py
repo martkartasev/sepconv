@@ -24,6 +24,7 @@ class Net(nn.Module):
         conv_stride = (1, 1)
         conv_padding = 1
 
+        sep_kernel_size = config.OUTPUT_1D_KERNEL_SIZE
 
         self.conv32 = nn.Conv2d(6, 32, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
         self.conv64 = nn.Conv2d(32, 64, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
@@ -35,10 +36,13 @@ class Net(nn.Module):
         self.upconv128 = nn.Conv2d(256, 128, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
         self.upconv64 = nn.Conv2d(128, 64, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
 
-        self.upconv51_1 = nn.Conv2d(64, 51, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.upconv51_2 = nn.Conv2d(64, 51, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.upconv51_3 = nn.Conv2d(64, 51, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
-        self.upconv51_4 = nn.Conv2d(64, 51, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv51_1 = nn.Conv2d(64, sep_kernel_size, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv51_2 = nn.Conv2d(64, sep_kernel_size, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv51_3 = nn.Conv2d(64, sep_kernel_size, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv51_4 = nn.Conv2d(64, sep_kernel_size, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+
+        # FIXME: Use proper padding
+        self.pad = nn.ConstantPad2d(sep_kernel_size // 2, 0.0)
 
         if torch.cuda.is_available():
             self.separable_conv = SeparableConvolution()
@@ -74,10 +78,10 @@ class Net(nn.Module):
         print('_conv_512')
 
         x = self.relu(self.conv512x512(x))
-        x = self.pool(x)
 
         print('_conv_512x512')
 
+        # -----------------------------------------------------------------------
 
         x = self.upsamp(x)
         x = self.relu(self.upconv256(x))
@@ -91,6 +95,8 @@ class Net(nn.Module):
         x = self.upsamp(x)
         x = self.relu(self.upconv64(x))
         x = self.upsamp(x)
+
+        # --------------------------------
 
         print('_up_conv64')
         k2h = self.relu(self.upconv51_1(x))
@@ -111,8 +117,11 @@ class Net(nn.Module):
         k1v = self.relu(self.upconv51_4(x))
         k1v = self.upsamp(k1v)
 
+        padded_i2 = self.pad(i2)
+        padded_i1 = self.pad(i1)
+
         print('_up_conv_51_4')
-        return self.separable_conv(i2, k2v, k2h) + self.separable_conv(i1, k1v, k1h)
+        return self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
 
     def _initialize_weights(self):
         print('_initialize_weights')
