@@ -1,6 +1,6 @@
 import torch as t
 
-from src.config import OUTPUT_1D_KERNEL_SIZE as filter_size
+from src.config import OUTPUT_1D_KERNEL_SIZE as FILTER_SIZE
 
 
 class SeparableConvolutionSlow(t.autograd.Function):
@@ -10,36 +10,33 @@ class SeparableConvolutionSlow(t.autograd.Function):
     def forward(self, im, vertical, horizontal):
         n_b = im.size(0)
         n_channels = im.size(1)
-        h = im.size(2)
-        w = im.size(3)
-        h_out = h - filter_size + 1
-        w_out = w - filter_size + 1
+        m = im.size(2)
+        m_out = m - FILTER_SIZE + 1
         
+        assert im.size(2) == im.size(3)
         assert vertical.size(0) == horizontal.size(0) == n_b
-        assert vertical.size(1) == horizontal.size(1) == filter_size
-        assert horizontal.size(2) == h
-        assert horizontal.size(3) == vertical.size(3) == w_out
-        assert vertical.size(2) == h_out
+        assert vertical.size(1) == horizontal.size(1) == FILTER_SIZE
+        assert vertical.size(2) == horizontal.size(2) == vertical.size(3) == horizontal.size(3) == m_out
         
-        output = t.zeros((n_b, n_channels, h_out, w_out))
+        output = t.zeros((n_b, n_channels, m_out, m_out))
         
         for b in range(n_b):
-            for c in range(n_channels):
-                conv_horiz = local_conv_1d_slow(im[b, c], horizontal[b])
-                conv_both = local_conv_1d_slow(conv_horiz.transpose(0, 1), vertical[b].transpose(1, 2)).transpose(0, 1)
-                output[b, c] = conv_both
+             local_separable_conv_2d(im[b], horizontal[b], vertical[b], output=output[b])
         return output
 
 
-def local_conv_1d_slow(im, filt, output=None):
-    h, w = im.shape
-    fw, _, _ = filt.shape
-    assert filt.shape[1:] == (h, w - fw + 1)
-    assert fw % 2 == 1
-    fw2 = fw // 2
+def local_separable_conv_2d(im, horizontal, vertical, output=None):
+    """im: [n_channels x m x m], horizontal: [51 x m x m], vertical: [51 x m x m]
+       -> return: [n_channels x (m - 50) x (m - 50)]"""
+    n_channels = im.size(0)
+    m = im.size(1)
+    m_out = m - FILTER_SIZE + 1
     if output is None:
-        output = t.zeros((h, w - fw + 1))
-    for i in range(h):
-        for j in range(fw2, w - fw2):
-            output[i, j - fw2] = t.dot(im[i, j - fw2:j + fw2 + 1], filt[:, i, j - fw2])
+        output = t.zeros((n_channels, m_out, m_out))
+    for row in range(m_out):
+        for col in range(m_out):
+            sub_patch = im[:, row:row + FILTER_SIZE, col:col + FILTER_SIZE]
+            local_horiz = horizontal[:, row, col]
+            local_vert = vertical[:, row, col].reshape(-1, 1)
+            output[:, row, col] = (sub_patch * local_horiz * local_vert).sum(dim=1).sum(dim=1)
     return output
