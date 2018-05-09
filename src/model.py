@@ -23,24 +23,25 @@ class Net(nn.Module):
 
         self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
         self.upsamp = nn.Upsample(scale_factor=2, mode='bilinear')
+        self.relu = nn.ReLU()
 
-        self.conv32 = self.conv_module(6, 32, conv_kernel, conv_stride, conv_padding)
-        self.conv64 = self.conv_module(32, 64, conv_kernel, conv_stride, conv_padding)
-        self.conv128 = self.conv_module(64, 128, conv_kernel, conv_stride, conv_padding)
-        self.conv256 = self.conv_module(128, 256, conv_kernel, conv_stride, conv_padding)
-        self.conv512 = self.conv_module(256, 512, conv_kernel, conv_stride, conv_padding)
-        self.conv512x512 = self.conv_module(512, 512, conv_kernel, conv_stride, conv_padding)
-        self.upsamp512 = self.upsample(512, 512, conv_kernel, conv_stride, conv_padding, self.upsamp)
-        self.upconv256 = self.conv_module(512, 256, conv_kernel, conv_stride, conv_padding)
-        self.upsamp256 = self.upsample(256, 256, conv_kernel, conv_stride, conv_padding, self.upsamp)
-        self.upconv128 = self.conv_module(256, 128, conv_kernel, conv_stride, conv_padding)
-        self.upsamp128 = self.upsample(128, 128, conv_kernel, conv_stride, conv_padding, self.upsamp)
-        self.upconv64 = self.conv_module(128, 64, conv_kernel, conv_stride, conv_padding)
-        self.upsamp64 = self.upsample(64, 64, conv_kernel, conv_stride, conv_padding, self.upsamp)
-        self.upconv51_1 = self.kernel_conv(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp)
-        self.upconv51_2 = self.kernel_conv(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp)
-        self.upconv51_3 = self.kernel_conv(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp)
-        self.upconv51_4 = self.kernel_conv(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp)
+        self.conv32 = self.conv_module(6, 32, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv64 = self.conv_module(32, 64, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv128 = self.conv_module(64, 128, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv256 = self.conv_module(128, 256, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv512 = self.conv_module(256, 512, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv512x512 = self.conv_module(512, 512, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.upsamp512 = self.upsample_module(512, 512, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv256 = self.conv_module(512, 256, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.upsamp256 = self.upsample_module(256, 256, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv128 = self.conv_module(256, 128, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.upsamp128 = self.upsample_module(128, 128, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv64 = self.conv_module(128, 64, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.upsamp64 = self.upsample_module(64, 64, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv51_1 = self.kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv51_2 = self.kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv51_3 = self.kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv51_4 = self.kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
 
         # FIXME: Use proper padding
         self.pad = nn.ConstantPad2d(sep_kernel // 2, 0.0)
@@ -121,25 +122,25 @@ class Net(nn.Module):
         print('_up_conv_51_4')
         return self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
 
-    def conv_module(self, in_channels, out_channels, kernel, stride, padding):
+    def conv_module(self, in_channels, out_channels, kernel, stride, padding, relu):
         return torch.nn.Sequential(
-            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), torch.nn.ReLU(),
-            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), torch.nn.ReLU(),
-            torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), torch.nn.ReLU(),
+            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
+            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
+            torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), relu,
         )
 
-    def kernel_conv(self, in_channels, out_channels, kernel, stride, padding, upsample):
+    def kernel_module(self, in_channels, out_channels, kernel, stride, padding, upsample, relu):
         return torch.nn.Sequential(
-            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), torch.nn.ReLU(),
-            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), torch.nn.ReLU(),
-            torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), torch.nn.ReLU(),
+            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
+            torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
+            torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), relu,
             upsample,
             torch.nn.Conv2d(out_channels, out_channels, kernel, stride, padding)
         )
 
-    def upsample(self, in_channels, out_channels, kernel, stride, padding, upsample):
+    def upsample_module(self, in_channels, out_channels, kernel, stride, padding, upsample, relu):
         return torch.nn.Sequential(
-            upsample, torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), torch.nn.ReLU(),
+            upsample, torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), relu,
         )
 
 
