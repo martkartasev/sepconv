@@ -68,17 +68,23 @@ class Net(nn.Module):
 
         x256 = self.relu(self.conv256(x256))
         x512 = self.pool(x256)
+
         print('_conv_256')
 
         x512 = self.relu(self.conv512(x512))
         x = self.pool(x512)
+
         print('_conv_512')
 
         x = self.relu(self.conv512x512(x))
+
         print('_conv_512x512')
 
+<<<<<<< HEAD
+=======
         # -----------------------------------------------------------------------
 
+>>>>>>> c88ad308dc3461dca56e6120472ec55a8e388db6
         x = self.upsamp(x)
         x += x512
         x = self.relu(self.upconv256(x))
@@ -101,19 +107,21 @@ class Net(nn.Module):
         print('_up_conv64')
         k2h = self.relu(self.upconv51_1(x))
         k2h = self.upsamp(k2h)
+
         print('_up_conv_51_1')
 
         k2v = self.relu(self.upconv51_2(x))
         k2v = self.upsamp(k2v)
+
         print('_up_conv_51_2')
 
         k1h = self.relu(self.upconv51_3(x))
         k1h = self.upsamp(k1h)
+
         print('_up_conv_51_3')
 
         k1v = self.relu(self.upconv51_4(x))
         k1v = self.upsamp(k1v)
-        print('_up_conv_51_4')
 
         padded_i2 = self.pad(i2)
         padded_i1 = self.pad(i1)
