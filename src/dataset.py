@@ -19,6 +19,16 @@ def load_img(file_path):
 def is_image(filename):
     return any(filename.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
 
+def pil_transform(x):
+    """
+    :param x: PIL.Image object
+    :return: Normalized torch tensor of shape (channels, height, width)
+    """
+    # Channels are the third dim of a PIL.Image,
+    # but we want to be able to index it by channel first,
+    # so we use np.rollaxis to get an array of shape (3, h, w)
+    return torch.from_numpy(np.rollaxis(np.asarray(x) / 255.0, 2)).float()
+
 class DatasetFromFolder(data.Dataset):
 
     def __init__(self, root_dir, input_transform, target_transform):
@@ -41,16 +51,6 @@ class DatasetFromFolder(data.Dataset):
         self.input_transform = input_transform
         self.target_transform = target_transform
 
-    def _pil_transform(self, x):
-        """
-        :param x: PIL.Image object
-        :return: Normalized torch tensor of shape (channels, height, width)
-        """
-        # Channels are the third dim of a PIL.Image,
-        # but we want to be able to index it by channel first,
-        # so we use np.rollaxis to get an array of shape (3, h, w)
-        return torch.from_numpy(np.rollaxis(np.asarray(x) / 255.0, 2)).float()
-
     def __getitem__(self, index):
         tup = self.image_tuples[index]
         x1, target, x2 = (load_img(x) for x in tup)
@@ -62,9 +62,9 @@ class DatasetFromFolder(data.Dataset):
         if self.target_transform:
             target = self.target_transform(target)
 
-        x1 = self._pil_transform(x1)
-        x2 = self._pil_transform(x2)
-        target = self._pil_transform(target)
+        x1 = pil_transform(x1)
+        x2 = pil_transform(x2)
+        target = pil_transform(target)
 
         input = torch.cat((x1, x2), dim=0)
         return input, target
