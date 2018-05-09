@@ -18,11 +18,14 @@ class SeparableConvolutionSlow(t.autograd.Function):
         assert vertical.size(1) == horizontal.size(1) == FILTER_SIZE
         assert vertical.size(2) == horizontal.size(2) == vertical.size(3) == horizontal.size(3) == m_out
         
-        output = t.zeros((n_b, n_channels, m_out, m_out))
+        output = input.new().resize_(n_b, n_channels, m_out, m_out).zeros_()
         
         for b in range(n_b):
              local_separable_conv_2d(im[b], horizontal[b], vertical[b], output=output[b])
         return output
+    
+    def backward(self, grad_output):
+        raise NotImplementedError
 
 
 def local_separable_conv_2d(im, horizontal, vertical, output=None):
