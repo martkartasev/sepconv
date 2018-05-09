@@ -26,23 +26,23 @@ class Net(nn.Module):
         self.upsamp = nn.Upsample(scale_factor=2, mode='bilinear')
         self.relu = nn.ReLU()
 
-        self.conv32 = self.conv_module(6, 32, conv_kernel, conv_stride, conv_padding, self.relu)
-        self.conv64 = self.conv_module(32, 64, conv_kernel, conv_stride, conv_padding, self.relu)
-        self.conv128 = self.conv_module(64, 128, conv_kernel, conv_stride, conv_padding, self.relu)
-        self.conv256 = self.conv_module(128, 256, conv_kernel, conv_stride, conv_padding, self.relu)
-        self.conv512 = self.conv_module(256, 512, conv_kernel, conv_stride, conv_padding, self.relu)
-        self.conv512x512 = self.conv_module(512, 512, conv_kernel, conv_stride, conv_padding, self.relu)
-        self.upsamp512 = self.upsample_module(512, 512, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
-        self.upconv256 = self.conv_module(512, 256, conv_kernel, conv_stride, conv_padding, self.relu)
-        self.upsamp256 = self.upsample_module(256, 256, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
-        self.upconv128 = self.conv_module(256, 128, conv_kernel, conv_stride, conv_padding, self.relu)
-        self.upsamp128 = self.upsample_module(128, 128, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
-        self.upconv64 = self.conv_module(128, 64, conv_kernel, conv_stride, conv_padding, self.relu)
-        self.upsamp64 = self.upsample_module(64, 64, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
-        self.upconv51_1 = self.kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
-        self.upconv51_2 = self.kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
-        self.upconv51_3 = self.kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
-        self.upconv51_4 = self.kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.conv32 = self._conv_module(6, 32, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv64 = self._conv_module(32, 64, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv128 = self._conv_module(64, 128, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv256 = self._conv_module(128, 256, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv512 = self._conv_module(256, 512, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.conv512x512 = self._conv_module(512, 512, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.upsamp512 = self._upsample_module(512, 512, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv256 = self._conv_module(512, 256, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.upsamp256 = self._upsample_module(256, 256, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv128 = self._conv_module(256, 128, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.upsamp128 = self._upsample_module(128, 128, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv64 = self._conv_module(128, 64, conv_kernel, conv_stride, conv_padding, self.relu)
+        self.upsamp64 = self._upsample_module(64, 64, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv51_1 = self._kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv51_2 = self._kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv51_3 = self._kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
+        self.upconv51_4 = self._kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
 
         # FIXME: Use proper padding
         self.pad = nn.ConstantPad2d(sep_kernel // 2, 0.0)
@@ -52,9 +52,14 @@ class Net(nn.Module):
         else:
             self.separable_conv = SeparableConvolutionSlow()
 
+        print('_weight_init')
+        self.apply(self._weight_init)
 
-        print('_initialize_weights')
-        self.apply(weight_init)
+    def interpolate(self, *args):
+        return interpol.interpolate(self, *args)
+
+    def interpolate_f(self, *args):
+        return interpol.interpolate_f(self, *args)
 
     def forward(self, x):
         i1 = x[:, :3]
@@ -127,14 +132,16 @@ class Net(nn.Module):
         print('_up_conv_51_4')
         return self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
 
-    def conv_module(self, in_channels, out_channels, kernel, stride, padding, relu):
+    @staticmethod
+    def _conv_module(in_channels, out_channels, kernel, stride, padding, relu):
         return torch.nn.Sequential(
             torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
             torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
             torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), relu,
         )
 
-    def kernel_module(self, in_channels, out_channels, kernel, stride, padding, upsample, relu):
+    @staticmethod
+    def _kernel_module(in_channels, out_channels, kernel, stride, padding, upsample, relu):
         return torch.nn.Sequential(
             torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
             torch.nn.Conv2d(in_channels, in_channels, kernel, stride, padding), relu,
@@ -143,21 +150,17 @@ class Net(nn.Module):
             torch.nn.Conv2d(out_channels, out_channels, kernel, stride, padding)
         )
 
-    def upsample_module(self, in_channels, out_channels, kernel, stride, padding, upsample, relu):
+    @staticmethod
+    def _upsample_module(in_channels, out_channels, kernel, stride, padding, upsample, relu):
         return torch.nn.Sequential(
             upsample, torch.nn.Conv2d(in_channels, out_channels, kernel, stride, padding), relu,
         )
 
-    def interpolate(self, *args):
-        return interpol.interpolate(self, *args)
+    @staticmethod
+    def _weight_init(m):
+        if isinstance(m, nn.Conv2d):
+            init.orthogonal_(m.weight, init.calculate_gain('relu'))
 
-    def interpolate_f(self, *args):
-        return interpol.interpolate_f(self, *args)
-
-
-def weight_init(m):
-    if isinstance(m, nn.Conv2d):
-        init.orthogonal_(m.weight, init.calculate_gain('relu'))
 
 class CustomLoss(_Loss):
 
