@@ -15,15 +15,13 @@ class Net(nn.Module):
 
     def __init__(self):
         super(Net, self).__init__()
-
-        self.relu = nn.ReLU()
-        self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
-        self.upsamp = nn.Upsample(scale_factor=2, mode='bilinear')
-
         conv_kernel_size = (3, 3)
         conv_stride = (1, 1)
         conv_padding = 1
 
+        self.relu = nn.ReLU()
+        self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
+        self.upsamp = nn.Upsample(scale_factor=2, mode='bilinear')
 
         self.conv32 = nn.Conv2d(6, 32, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
         self.conv64 = nn.Conv2d(32, 64, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
