@@ -89,19 +89,20 @@ class Net(nn.Module):
 
     def _initialize_weights(self):
         print('_initialize_weights')
-        init.orthogonal_(self.conv32.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.conv64.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.conv128.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.conv256.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.conv512.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.conv512x512.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.upconv64.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.upconv128.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.upconv256.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.upconv51_1.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.upconv51_2.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.upconv51_3.weight, init.calculate_gain('relu'))
-        init.orthogonal_(self.upconv51_4.weight, init.calculate_gain('relu'))
+        gain = init.calculate_gain('relu')
+        init.orthogonal_(self.conv32.weight, gain)
+        init.orthogonal_(self.conv64.weight, gain)
+        init.orthogonal_(self.conv128.weight, gain)
+        init.orthogonal_(self.conv256.weight, gain)
+        init.orthogonal_(self.conv512.weight, gain)
+        init.orthogonal_(self.conv512x512.weight, gain)
+        init.orthogonal_(self.upconv64.weight, gain)
+        init.orthogonal_(self.upconv128.weight, gain)
+        init.orthogonal_(self.upconv256.weight, gain)
+        init.orthogonal_(self.upconv51_1.weight, gain)
+        init.orthogonal_(self.upconv51_2.weight, gain)
+        init.orthogonal_(self.upconv51_3.weight, gain)
+        init.orthogonal_(self.upconv51_4.weight, gain)
 
 class CustomLoss(_Loss):
 
