@@ -17,23 +17,28 @@ class Net(nn.Module):
         super(Net, self).__init__()
 
         self.relu = nn.ReLU()
-        self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(1, 1))
+        self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
         self.upsamp = nn.Upsample(scale_factor=2, mode='bilinear')
 
-        self.conv32 = nn.Conv2d(6, 32, kernel_size=(3, 3), stride=(1, 1))
-        self.conv64 = nn.Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1))
-        self.conv128 = nn.Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1))
-        self.conv256 = nn.Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1))
-        self.conv512 = nn.Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1))
-        self.conv512x512 = nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1))
-        self.upconv256 = nn.Conv2d(512, 256, kernel_size=(3, 3), stride=(1, 1))
-        self.upconv128 = nn.Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1))
-        self.upconv64 = nn.Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1))
+        conv_kernel_size = (3, 3)
+        conv_stride = (1, 1)
+        conv_padding = 1
 
-        self.upconv51_1 = nn.Conv2d(64, 51, kernel_size=(3, 3), stride=(1, 1))
-        self.upconv51_2 = nn.Conv2d(64, 51, kernel_size=(3, 3), stride=(1, 1))
-        self.upconv51_3 = nn.Conv2d(64, 51, kernel_size=(3, 3), stride=(1, 1))
-        self.upconv51_4 = nn.Conv2d(64, 51, kernel_size=(3, 3), stride=(1, 1))
+
+        self.conv32 = nn.Conv2d(6, 32, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.conv64 = nn.Conv2d(32, 64, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.conv128 = nn.Conv2d(64, 128, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.conv256 = nn.Conv2d(128, 256, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.conv512 = nn.Conv2d(256, 512, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.conv512x512 = nn.Conv2d(512, 512, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv256 = nn.Conv2d(512, 256, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv128 = nn.Conv2d(256, 128, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv64 = nn.Conv2d(128, 64, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+
+        self.upconv51_1 = nn.Conv2d(64, 51, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv51_2 = nn.Conv2d(64, 51, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv51_3 = nn.Conv2d(64, 51, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
+        self.upconv51_4 = nn.Conv2d(64, 51, kernel_size=conv_kernel_size, stride=conv_stride, padding=conv_padding)
 
         if torch.cuda.is_available():
             self.separable_conv = SeparableConvolution()
