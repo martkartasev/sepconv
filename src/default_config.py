@@ -5,24 +5,23 @@
 #
 # This file is for reference only and should *not* me modified.
 # To change the configuration, create a new config.py file
-# and import this one in it as 'from default_config import *'
+# and import this one in it as 'from src.default_config import *'
 #
 
 # The size of the input images to be fed to the network.
 # Image files larger than this size will be cropped (around the center).
 CROP_SIZE: int = 128
 
-# TODO: Add description
+# Number of epochs used for training
 EPOCHS: int = 10
 
-# TODO: Add description
-# TODO: Implement
+# Kernel size of the custom Separable Convolution layer
 OUTPUT_1D_KERNEL_SIZE: int = 51
 
-# TODO: Add description
+# The batch size used for mini batch gradient descent
 BATCH_SIZE: int = 100
 
-# TODO: Add description
+# Upper limit on the number of samples used for training
 MAX_TRAINING_SAMPLES: int = 10_000
 
 # Number of workers of the torch.utils.data.DataLoader
@@ -43,3 +42,6 @@ OUTPUT_DIR: str = './out'
 
 # Whether or not the model parameters should be written to disk at each epoch
 SAVE_CHECKPOINS: bool = False
+
+# Force model to use the slow Separable Convolution implementation even if CUDA is available
+ALWAYS_SLOW_SEP_CONV: bool = False

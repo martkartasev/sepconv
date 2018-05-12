@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.init as init
 from torch.nn.modules.loss import _Loss, _assert_no_grad
 from src.separable_convolution import SeparableConvolutionSlow
-from libs.sepconv import SeparableConvolution
+from libs.sepconv.SeparableConvolution import SeparableConvolution
 import src.config as config
 import src.interpolate as interpol
 
@@ -47,7 +47,7 @@ class Net(nn.Module):
         # FIXME: Use proper padding
         self.pad = nn.ConstantPad2d(sep_kernel // 2, 0.0)
 
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and not config.ALWAYS_SLOW_SEP_CONV:
             self.separable_conv = SeparableConvolution()
         else:
             self.separable_conv = SeparableConvolutionSlow()
