@@ -49,6 +49,8 @@ def interpolate_f(model, path1, path2):
 
 if __name__ == '__main__':
 
+    from src.model import Net
+
     parser = argparse.ArgumentParser(description='Video Frame Interpolation')
     parser.add_argument('--prev', type=str, required=True, help='path to frame at t-1')
     parser.add_argument('--succ', type=str, required=True, help='path to frame at t+1')
@@ -59,7 +61,9 @@ if __name__ == '__main__':
     tick_t = timer()
 
     print('===> Loading model...')
-    model = torch.load(params.model)
+    model = Net()
+    state_dict = torch.load(params.model)
+    model.load_state_dict(state_dict)
 
     print('===> Interpolating...')
     frame_out = interpolate_f(model, params.prev, params.succ)

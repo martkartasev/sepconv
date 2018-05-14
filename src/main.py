@@ -95,7 +95,7 @@ def save_checkpoint(epoch):
     model_out_path = join_paths(config.OUTPUT_DIR, model_out_path)
     if not exists(config.OUTPUT_DIR):
         makedirs(config.OUTPUT_DIR)
-    torch.save(model, model_out_path)
+    torch.save(model.state_dict(), model_out_path)
     print("Checkpoint saved to {}".format(model_out_path))
 
 
