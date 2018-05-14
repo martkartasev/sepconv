@@ -51,7 +51,7 @@ optimizer = optim.Adamax(model_params, lr=0.001)
 
 def detach_all(arg):
     """Wraps hidden states in new Variables, to detach them from their history."""
-    if type(arg) == Variable:
+    if type(arg) == torch.Tensor:
         arg.detach_() # Variable(arg.data)
     else:
         for v in arg:
