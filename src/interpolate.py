@@ -37,7 +37,7 @@ def interpolate(model, frame1, frame2):
     output = output.clip(0, 255)
 
     # PIL.Image wants the channel as the last dimension
-    output = np.rollaxis(output, 0, 3)
+    output = np.rollaxis(output, 0, 3).astype(np.uint8)
     frame_out = Image.fromarray(output, mode='RGB')
 
     return frame_out
