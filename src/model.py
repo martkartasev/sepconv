@@ -47,10 +47,13 @@ class Net(nn.Module):
         # FIXME: Use proper padding
         self.pad = nn.ConstantPad2d(sep_kernel // 2, 0.0)
 
-        if torch.cuda.is_available() and not config.ALWAYS_SLOW_SEP_CONV:
-            self.separable_conv = SeparableConvolution()
-        else:
-            self.separable_conv = SeparableConvolutionSlow()
+        # if torch.cuda.is_available() and not config.ALWAYS_SLOW_SEP_CONV:
+        #     self.separable_conv = SeparableConvolution()
+        # else:
+        #     self.separable_conv = SeparableConvolutionSlow()
+
+        self.separable_conv = SeparableConvolution()
+        self.separable_conv_slow = SeparableConvolutionSlow()
 
         print('_weight_init')
         self.apply(self._weight_init)
@@ -129,8 +132,19 @@ class Net(nn.Module):
         # FIX/ME: DELETE!!
         # return (k2h + k2v + k1h + k1v)[:, :3]
 
-        print('_up_conv_51_4')
-        return self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
+        print('Running sepconv (CUDA)...')
+        res = self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
+
+        print('Running sepconv (slow)...')
+        res_slow = self.separable_conv_slow(padded_i2, k2v, k2h) + self.separable_conv_slow(padded_i1, k1v, k1h)
+
+        print('sepconv done')
+
+        res_diff = (res - res_slow).abs()
+        print('res_diff.max()', res_diff.max())
+        print('res_diff.min()', res_diff.min())
+
+        return res
 
     @staticmethod
     def _conv_module(in_channels, out_channels, kernel, stride, padding, relu):
