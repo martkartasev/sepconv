@@ -13,6 +13,8 @@ import src.config as config
 from src.model import Net, CustomLoss
 from src.dataset import get_training_set, get_test_set
 
+from torch.autograd import Variable
+
 
 # ----------------------------------------------------------------------
 
@@ -52,7 +54,13 @@ def train(epoch):
         input, target = batch[0].to(device), batch[1].to(device)
 
         optimizer.zero_grad()
-        loss = l1_loss(model(input), target)
+
+        hidden = model(input)
+        hidden.detach_()
+        hidden = hidden.detach()
+        hidden = Variable(hidden.data, requires_grad=True)
+
+        loss = l1_loss(hidden, target)
         epoch_loss += loss.item()
         print('Computing gradients...')
         loss.backward()
