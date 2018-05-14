@@ -10,7 +10,7 @@ from src.separable_convolution import SeparableConvolutionSlow
 from libs.sepconv.SeparableConvolution import SeparableConvolution
 import src.config as config
 import src.interpolate as interpol
-
+import numpy as np
 
 class Net(nn.Module):
 
@@ -140,9 +140,11 @@ class Net(nn.Module):
 
         print('sepconv done')
 
-        res_diff = (res - res_slow).abs()
-        print('res_diff.max()', res_diff.max())
-        print('res_diff.min()', res_diff.min())
+
+        res_diff = (res - res_slow).abs().data.numpy() / np.maximum(1e-12, (res.abs() + res_slow.abs()).data.numpy())
+        print('res_diff.max()', np.max(res_diff))
+        print('res_diff.min()', np.min(res_diff))
+        print('res_diff.avg()', np.mean(res_diff))
 
         return res
 
