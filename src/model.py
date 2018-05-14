@@ -12,6 +12,8 @@ import src.config as config
 import src.interpolate as interpol
 import numpy as np
 
+from torch.autograd import Variable, gradcheck
+
 class Net(nn.Module):
 
     def __init__(self):
@@ -54,6 +56,8 @@ class Net(nn.Module):
 
         self.separable_conv = SeparableConvolution()
         self.separable_conv_slow = SeparableConvolutionSlow()
+
+        self._check_gradients(self.separable_conv)
 
         print('_weight_init')
         self.apply(self._weight_init)
@@ -147,6 +151,18 @@ class Net(nn.Module):
         print('res_diff.avg()', np.mean(res_diff))
 
         return res
+
+    @staticmethod
+    def _check_gradients(func):
+        print('Starting gradient check...')
+        sep_kernel = config.OUTPUT_1D_KERNEL_SIZE
+        inputs = (
+            Variable(torch.randn(2, 3, sep_kernel, sep_kernel).cuda(), requires_grad=False),
+            Variable(torch.randn(2, sep_kernel, 1, 1).cuda(), requires_grad=True),
+            Variable(torch.randn(2, sep_kernel, 1, 1).cuda(), requires_grad=True),
+        )
+        test = gradcheck(func, inputs, eps=1e-3, atol=1e-3, rtol=1e-3)
+        print('Gradient check result:', test)
 
     @staticmethod
     def _conv_module(in_channels, out_channels, kernel, stride, padding, relu):
