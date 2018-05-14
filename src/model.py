@@ -5,14 +5,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.init as init
+from torch.autograd import Variable, gradcheck
 from torch.nn.modules.loss import _Loss, _assert_no_grad
 from src.separable_convolution import SeparableConvolutionSlow
 from libs.sepconv.SeparableConvolution import SeparableConvolution
 import src.config as config
 import src.interpolate as interpol
-import numpy as np
 
-from torch.autograd import Variable, gradcheck
 
 class Net(nn.Module):
 
@@ -50,7 +49,7 @@ class Net(nn.Module):
         self.pad = nn.ConstantPad2d(sep_kernel // 2, 0.0)
 
         if torch.cuda.is_available() and not config.ALWAYS_SLOW_SEP_CONV:
-            self.separable_conv = SeparableConvolution()
+            self.separable_conv = SeparableConvolution.apply
         else:
             self.separable_conv = SeparableConvolutionSlow()
 

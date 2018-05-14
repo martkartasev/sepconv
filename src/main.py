@@ -75,8 +75,6 @@ def train(epoch):
         print('Gradients ready.')
         optimizer.step()
 
-        detach_all(model.parameters())
-
         print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss.item()))
     print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(training_data_loader)))
 

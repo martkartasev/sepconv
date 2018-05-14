@@ -12,9 +12,10 @@ class SeparableConvolution(torch.autograd.Function):
         super(SeparableConvolution, self).__init__()
     # end
 
-    def forward(self, input, vertical, horizontal):
+    @staticmethod
+    def forward(context, input, vertical, horizontal):
 
-        self.save_for_backward(input, vertical, horizontal)
+        context.save_for_backward(input, vertical, horizontal)
 
         intBatches = input.size(0)
         intInputDepth = input.size(1)
@@ -50,9 +51,10 @@ class SeparableConvolution(torch.autograd.Function):
         return output
     # end
 
-    def backward(self, grad_output):
+    @staticmethod
+    def backward(context, grad_output):
 
-        _input, vertical, horizontal = self.saved_tensors
+        _input, vertical, horizontal = context.saved_tensors
 
         grad_input = _input.new().resize_(_input.size()).zero_()
         grad_vertical = vertical.new().resize_(vertical.size()).zero_()
