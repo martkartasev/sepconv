@@ -8,65 +8,68 @@ import libs.sepconv._ext as _ext
 import libs.sepconv._ext.cunnex
 
 class SeparableConvolution(torch.autograd.Function):
-	def __init__(self):
-		super(SeparableConvolution, self).__init__()
-	# end
+    def __init__(self):
+        super(SeparableConvolution, self).__init__()
+    # end
 
-	def forward(self, input, vertical, horizontal):
-		intBatches = input.size(0)
-		intInputDepth = input.size(1)
-		intInputHeight = input.size(2)
-		intInputWidth = input.size(3)
-		intFilterSize = min(vertical.size(1), horizontal.size(1))
-		intOutputHeight = min(vertical.size(2), horizontal.size(2))
-		intOutputWidth = min(vertical.size(3), horizontal.size(3))
+    def forward(self, input, vertical, horizontal):
 
-		assert(intInputHeight - 51 == intOutputHeight - 1)
-		assert(intInputWidth - 51 == intOutputWidth - 1)
-		assert(intFilterSize == 51)
+        self.save_for_backward(input, vertical, horizontal)
 
-		assert(input.is_contiguous() == True)
-		assert(vertical.is_contiguous() == True)
-		assert(horizontal.is_contiguous() == True)
+        intBatches = input.size(0)
+        intInputDepth = input.size(1)
+        intInputHeight = input.size(2)
+        intInputWidth = input.size(3)
+        intFilterSize = min(vertical.size(1), horizontal.size(1))
+        intOutputHeight = min(vertical.size(2), horizontal.size(2))
+        intOutputWidth = min(vertical.size(3), horizontal.size(3))
 
-		output = input.new().resize_(intBatches, intInputDepth, intOutputHeight, intOutputWidth).zero_()
+        assert(intInputHeight - 51 == intOutputHeight - 1)
+        assert(intInputWidth - 51 == intOutputWidth - 1)
+        assert(intFilterSize == 51)
 
-		if input.is_cuda == True:
-			_ext.cunnex.SeparableConvolution_cuda_forward(
-				input,
-				vertical,
-				horizontal,
-				output
-			)
+        assert(input.is_contiguous() == True)
+        assert(vertical.is_contiguous() == True)
+        assert(horizontal.is_contiguous() == True)
 
-		elif input.is_cuda == False:
-			raise NotImplementedError() # CPU VERSION NOT IMPLEMENTED
+        output = input.new().resize_(intBatches, intInputDepth, intOutputHeight, intOutputWidth).zero_()
 
-		# end
+        if input.is_cuda == True:
+            _ext.cunnex.SeparableConvolution_cuda_forward(
+                input,
+                vertical,
+                horizontal,
+                output
+            )
 
-		return output
-	# end
+        elif input.is_cuda == False:
+            raise NotImplementedError() # CPU VERSION NOT IMPLEMENTED
 
-	def backward(self, grad_output):
+        # end
 
-		_input, vertical, horizontal = self.saved_tensors
+        return output
+    # end
 
-		grad_input = _input.new().resize_(_input.size()).zero_()
-		grad_vertical = vertical.new().resize_(vertical.size()).zero_()
-		grad_horizontal = horizontal.new().resize_(horizontal.size()).zero_()
+    def backward(self, grad_output):
 
-		if grad_output.is_cuda:
-			_ext.cunnex.SeparableConvolution_cuda_backward(
-				grad_output,
-				_input,
-				vertical,
-				horizontal,
-				grad_input,
-				grad_vertical,
-				grad_horizontal
-			)
-		# end
+        _input, vertical, horizontal = self.saved_tensors
 
-		return grad_input, grad_vertical, grad_horizontal
-	#end
+        grad_input = _input.new().resize_(_input.size()).zero_()
+        grad_vertical = vertical.new().resize_(vertical.size()).zero_()
+        grad_horizontal = horizontal.new().resize_(horizontal.size()).zero_()
+
+        if grad_output.is_cuda:
+            _ext.cunnex.SeparableConvolution_cuda_backward(
+                grad_output,
+                _input,
+                vertical,
+                horizontal,
+                grad_input,
+                grad_vertical,
+                grad_horizontal
+            )
+        # end
+
+        return grad_input, grad_vertical, grad_horizontal
+    #end
 # end
