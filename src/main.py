@@ -62,8 +62,6 @@ def train(epoch):
     for iteration, batch in enumerate(training_data_loader, 1):
         input, target = batch[0].to(device), batch[1].to(device)
 
-        detach_all(model_params)
-
         optimizer.zero_grad()
 
         print('Forward pass...')
@@ -77,6 +75,8 @@ def train(epoch):
 
         print('Gradients ready.')
         optimizer.step()
+
+        detach_all(model_params)
 
         print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss.item()))
     print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(training_data_loader)))
