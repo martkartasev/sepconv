@@ -9,7 +9,8 @@ parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$parent_path"
 
 TORCH=$(python3 -c "import os; import torch; print(os.path.dirname(torch.__file__))")
+GPU_ARCH="compute_37"
 
-nvcc -c -o src/SeparableConvolution_kernel.o src/SeparableConvolution_kernel.cu --gpu-architecture=compute_52 --gpu-code=compute_52 --compiler-options -fPIC -I ${TORCH}/lib/include/TH -I ${TORCH}/lib/include/THC
+nvcc -c -o src/SeparableConvolution_kernel.o src/SeparableConvolution_kernel.cu --gpu-architecture=$(GPU_ARCH) --gpu-code=$(GPU_ARCH) --compiler-options -fPIC -I ${TORCH}/lib/include/TH -I ${TORCH}/lib/include/THC
 
 python3 install.py
