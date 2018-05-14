@@ -45,3 +45,6 @@ SAVE_CHECKPOINS: bool = False
 
 # Force model to use the slow Separable Convolution implementation even if CUDA is available
 ALWAYS_SLOW_SEP_CONV: bool = False
+
+# Whether or not we should run the test set on the model at each epoch
+TEST_ENABLED: bool = False

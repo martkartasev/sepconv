@@ -107,7 +107,8 @@ for epoch in range(1, config.EPOCHS + 1):
     train(epoch)
     if config.SAVE_CHECKPOINS:
         save_checkpoint(epoch)
-    test()
+    if config.TEST_ENABLED:
+        test()
 
 tock_t = timer()
 
