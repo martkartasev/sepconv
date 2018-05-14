@@ -52,9 +52,10 @@ optimizer = optim.Adamax(model_params, lr=0.001)
 def detach_all(arg):
     """Wraps hidden states in new Variables, to detach them from their history."""
     if type(arg) == Variable:
-        return Variable(arg.data)
+        arg.detach_() # Variable(arg.data)
     else:
-        return tuple(detach_all(v) for v in arg)
+        for v in arg:
+            detach_all(v)
 
 def train(epoch):
     epoch_loss = 0
