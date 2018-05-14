@@ -47,7 +47,26 @@ class SeparableConvolution(torch.autograd.Function):
 		return output
 	# end
 
-	def backward(self, gradOutput):
-		raise NotImplementedError() # BACKPROPAGATION NOT IMPLEMENTED
-	# end
+	def backward(self, grad_output):
+
+		_input, vertical, horizontal = self.saved_tensors
+
+		grad_input = _input.new().resize_(_input.size()).zero_()
+		grad_vertical = vertical.new().resize_(vertical.size()).zero_()
+		grad_horizontal = horizontal.new().resize_(horizontal.size()).zero_()
+
+		if grad_output.is_cuda:
+			_ext.cunnex.SeparableConvolution_cuda_backward(
+				grad_output,
+				_input,
+				vertical,
+				horizontal,
+				grad_input,
+				grad_vertical,
+				grad_horizontal
+			)
+		# end
+
+		return grad_input, grad_vertical, grad_horizontal
+	#end
 # end

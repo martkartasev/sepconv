@@ -26,3 +26,27 @@ int SeparableConvolution_cuda_forward(
 
 	return 1;
 }
+
+// From: https://github.com/ekgibbons/pytorch-sepconv
+int SeparableConvolution_cuda_backward(
+    THCudaTensor* gradLoss,
+    THCudaTensor* input,
+    THCudaTensor* vertical,
+    THCudaTensor* horizontal,
+    THCudaTensor* gradInput,
+    THCudaTensor* gradVertical,
+    THCudaTensor* gradHorizontal
+) {
+    SeparableConvolution_kernel_backward(
+        state,
+        gradLoss,
+        input,
+        vertical,
+        horizontal,
+        gradInput,
+        gradVertical,
+        gradHorizontal
+	);
+
+    return 1;
+}
