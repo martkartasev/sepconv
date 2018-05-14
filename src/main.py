@@ -42,28 +42,38 @@ testing_data_loader = DataLoader(dataset=test_set, num_workers=config.NUM_WORKER
 
 print('===> Building model...')
 model = Net().to(device)
+model_params = model.parameters()
 l1_loss = nn.L1Loss()
-optimizer = optim.Adamax(model.parameters(), lr=0.001)
+optimizer = optim.Adamax(model_params, lr=0.001)
 
 
 # ----------------------------------------------------------------------
+
+def detach_all(arg):
+    """Wraps hidden states in new Variables, to detach them from their history."""
+    if type(arg) == Variable:
+        return Variable(arg.data)
+    else:
+        return tuple(detach_all(v) for v in arg)
 
 def train(epoch):
     epoch_loss = 0
     for iteration, batch in enumerate(training_data_loader, 1):
         input, target = batch[0].to(device), batch[1].to(device)
 
+        detach_all(model_params)
+
         optimizer.zero_grad()
 
-        hidden = model(input)
-        hidden.detach_()
-        hidden = hidden.detach()
-        hidden = Variable(hidden.data, requires_grad=True)
+        print('Forward pass...')
+        output = model(input)
 
-        loss = l1_loss(hidden, target)
+        loss = l1_loss(output, target)
         epoch_loss += loss.item()
+
         print('Computing gradients...')
         loss.backward()
+
         print('Gradients ready.')
         optimizer.step()
 
