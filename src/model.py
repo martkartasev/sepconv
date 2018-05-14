@@ -141,7 +141,7 @@ class Net(nn.Module):
         print('sepconv done')
 
 
-        res_diff = (res - res_slow).abs().data.numpy() / np.maximum(1e-12, (res.abs() + res_slow.abs()).data.numpy())
+        res_diff = (res - res_slow).abs().data.cpu().numpy() / np.maximum(1e-12, (res.abs() + res_slow.abs()).data.cpu().numpy())
         print('res_diff.max()', np.max(res_diff))
         print('res_diff.min()', np.min(res_diff))
         print('res_diff.avg()', np.mean(res_diff))
