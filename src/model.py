@@ -49,15 +49,14 @@ class Net(nn.Module):
         # FIXME: Use proper padding
         self.pad = nn.ConstantPad2d(sep_kernel // 2, 0.0)
 
-        # if torch.cuda.is_available() and not config.ALWAYS_SLOW_SEP_CONV:
-        #     self.separable_conv = SeparableConvolution()
-        # else:
-        #     self.separable_conv = SeparableConvolutionSlow()
+        if torch.cuda.is_available() and not config.ALWAYS_SLOW_SEP_CONV:
+            self.separable_conv = SeparableConvolution()
+        else:
+            self.separable_conv = SeparableConvolutionSlow()
 
-        self.separable_conv = SeparableConvolution()
-        self.separable_conv_slow = SeparableConvolutionSlow()
-
-        self._check_gradients(self.separable_conv)
+        # self.separable_conv = SeparableConvolution()
+        # self.separable_conv_slow = SeparableConvolutionSlow()
+        # self._check_gradients(self.separable_conv)
 
         print('_weight_init')
         self.apply(self._weight_init)
@@ -139,16 +138,15 @@ class Net(nn.Module):
         print('Running sepconv (CUDA)...')
         res = self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
 
-        print('Running sepconv (slow)...')
-        res_slow = self.separable_conv_slow(padded_i2, k2v, k2h) + self.separable_conv_slow(padded_i1, k1v, k1h)
+        #print('Running sepconv (slow)...')
+        #res_slow = self.separable_conv_slow(padded_i2, k2v, k2h) + self.separable_conv_slow(padded_i1, k1v, k1h)
 
         print('sepconv done')
 
-
-        res_diff = (res - res_slow).abs().data.cpu().numpy() / np.maximum(1e-12, (res.abs() + res_slow.abs()).data.cpu().numpy())
-        print('res_diff.max()', np.max(res_diff))
-        print('res_diff.min()', np.min(res_diff))
-        print('res_diff.avg()', np.mean(res_diff))
+        #res_diff = (res - res_slow).abs().data.cpu().numpy() / np.maximum(1e-12, (res.abs() + res_slow.abs()).data.cpu().numpy())
+        #print('res_diff.max()', np.max(res_diff))
+        #print('res_diff.min()', np.min(res_diff))
+        #print('res_diff.avg()', np.mean(res_diff))
 
         return res
 
