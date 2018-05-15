@@ -35,14 +35,19 @@ def _get_padding_modules(img_height, img_width):
     return input_padding_module, output_padding_module
 
 
-def interpolate(model, frame1, frame2):
+def interpolate_batch(model, pil_frames):
 
-    assert frame1.size == frame2.size, "Frames must be of the same size to be interpolated"
+    assert len(pil_frames) > 1, "Frames to be interpolated must be at least two"
 
-    frame1 = pil_to_tensor(frame1)
-    frame2 = pil_to_tensor(frame2)
+    batch = []
+    for i in range(len(pil_frames)-1):
+        frame1 = pil_to_tensor(pil_frames[i])
+        frame2 = pil_to_tensor(pil_frames[i+1])
+        batch.append(torch.cat((frame1, frame2), dim=0))
+    batch = torch.stack(batch, dim=0)
 
-    frame_channels, frame_height, frame_width = frame1.shape
+    frame_channels, frame_height, frame_width = batch[0].shape
+    frame_channels /= 2
     assert frame_channels == 3, "Only frames with 3 channels are supported"
 
     # Generate the padding functions for the given input size
@@ -50,32 +55,31 @@ def interpolate(model, frame1, frame2):
 
     # Use CUDA if possible
     if torch.cuda.is_available():
-        frame1 = frame1.cuda()
-        frame2 = frame2.cuda()
+        batch = batch.cuda()
         input_pad = input_pad.cuda()
         output_pad = output_pad.cuda()
         model = model.cuda()
 
-    # Repackage images in a single tensor
-    _input = torch.cat((frame1, frame2), dim=0)
-
-    # Input of the model must be 4D (dim=0 being the index within the batch)
-    _input = _input.view(1, frame_channels * 2, frame_height, frame_width)
-
     # Apply input padding
-    _input = input_pad(_input)
+    batch = input_pad(batch)
 
     # Run forward pass
-    output = model(_input)
+    with torch.no_grad():
+        output = model(batch)
 
     # Apply output padding
     output = output_pad(output)
 
     # Get numpy representation of the output
-    output = output.cpu().detach().numpy()[0]
+    output = output.cpu().detach().numpy()
 
-    output_pil = numpy_to_pil(output)
-    return output_pil
+    output_pils = [numpy_to_pil(x) for x in output]
+    return output_pils
+
+def interpolate(model, frame1, frame2):
+    assert frame1.size == frame2.size, "Frames must be of the same size to be interpolated"
+    frames = [frame1, frame2]
+    return interpolate_batch(model, frames)[0]
 
 def interpolate_f(model, path1, path2):
     frames = (Image.open(p).convert('RGB') for p in (path1, path2))
