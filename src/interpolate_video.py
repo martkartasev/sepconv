@@ -49,9 +49,13 @@ if __name__ == '__main__':
 
     print('===> Interpolating...')
     middle_frames = []
-    n_baches = int(math.ceil(1.0 * len(input_frames) / batch_size))
+    n_baches = int(math.ceil(1.0 * len(input_frames) / (batch_size-1)))
+
+    assert len(input_frames) % (batch_size-1) != 1, 'batch size not compatible with the number of input frames'
+
     for i in range(n_baches):
-        batch = input_frames[batch_size*i : batch_size*(i+1)]
+        idx = (batch_size-1)*i
+        batch = input_frames[idx : idx+batch_size]
         middle_frames += interpolate_batch(model, batch)
 
     print('===> Stitching frames...')
