@@ -42,31 +42,34 @@ if __name__ == '__main__':
 
     if params.maxframes is not None:
         input_frames = input_frames[:params.maxframes]
+    n_input_frames = len(input_frames)
 
-    batch_size = len(input_frames)-1
-    if params.batchsize is not None and params.batchsize > 0:
+    batch_size = n_input_frames
+    if params.batchsize is not None and params.batchsize > 1:
         batch_size = min(params.batchsize, batch_size)
+
+    # FIXME: Change this monstrosity to something more elegant
+    n_batches = int(math.ceil(1.0 * n_input_frames / (batch_size - 1)))
+    if (batch_size-1)*(n_batches-1) >= n_input_frames - 1:
+        n_batches -= 1
 
     print('===> Interpolating...')
     middle_frames = []
-    n_baches = int(math.ceil(1.0 * len(input_frames) / (batch_size-1)))
-
-    assert len(input_frames) % (batch_size-1) != 1, 'batch size not compatible with the number of input frames'
-
-    for i in range(n_baches):
+    for i in range(n_batches):
         idx = (batch_size-1)*i
         batch = input_frames[idx : idx+batch_size]
         middle_frames += interpolate_batch(model, batch)
+        print('Batch {}/{} done'.format(i+1, n_batches))
 
     print('===> Stitching frames...')
     output_frames = input_frames[:1]
-    iters = len(input_frames) - 1
+    iters = len(middle_frames)
     for i in range(iters):
         frame1 = input_frames[i]
         frame2 = input_frames[i+1]
         middle = middle_frames[i]
         output_frames += [middle, frame2]
-        print('{}/{} done'.format(i+1, iters))
+        print('Frame {}/{} done'.format(i+1, iters))
     output_frames = [np.asarray(x) for x in output_frames]
 
     print('===> Saving video...')
