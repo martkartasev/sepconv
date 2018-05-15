@@ -5,7 +5,7 @@
 import torch.utils.data as data
 import torch
 import numpy as np
-from torchvision.transforms import Compose, CenterCrop, ToTensor
+from torchvision.transforms import CenterCrop
 from os.path import exists, join, basename, isdir
 from os import makedirs, remove, listdir
 from six.moves import urllib
@@ -19,15 +19,35 @@ def load_img(file_path):
 def is_image(filename):
     return any(filename.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
 
-def pil_transform(x):
+def pil_to_numpy(x_pil):
     """
-    :param x: PIL.Image object
-    :return: Normalized torch tensor of shape (channels, height, width)
+    :param x_pil: PIL.Image object
+    :return: Normalized numpy array of shape (channels, height, width)
     """
     # Channels are the third dim of a PIL.Image,
     # but we want to be able to index it by channel first,
     # so we use np.rollaxis to get an array of shape (3, h, w)
-    return torch.from_numpy(np.rollaxis(np.asarray(x) / 255.0, 2)).float()
+    return np.rollaxis(np.asarray(x_pil) / 255.0, 2)
+
+def pil_to_tensor(x_pil):
+    """
+    :param x_pil: PIL.Image object
+    :return: Normalized torch tensor of shape (channels, height, width)
+    """
+    x_np =pil_to_numpy(x_pil)
+    return torch.from_numpy(x_np).float()
+
+def numpy_to_pil(x_np):
+    """
+    :param x_np: Image as a numpy array of shape (channels, height, width)
+    :return: PIL.Image object
+    """
+    x_np = x_np.copy()
+    x_np *= 255.0
+    x_np = x_np.clip(0, 255)
+    # PIL.Image wants the channel as the last dimension
+    x_np = np.rollaxis(x_np, 0, 3).astype(np.uint8)
+    return Image.fromarray(x_np, mode='RGB')
 
 class DatasetFromFolder(data.Dataset):
 
@@ -65,9 +85,9 @@ class DatasetFromFolder(data.Dataset):
         if self.target_transform:
             target = self.target_transform(target)
 
-        x1 = pil_transform(x1)
-        x2 = pil_transform(x2)
-        target = pil_transform(target)
+        x1 = pil_to_tensor(x1)
+        x2 = pil_to_tensor(x2)
+        target = pil_to_tensor(target)
 
         input = torch.cat((x1, x2), dim=0)
         return input, target
