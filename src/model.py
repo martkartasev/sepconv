@@ -24,7 +24,7 @@ class Net(nn.Module):
         sep_kernel = config.OUTPUT_1D_KERNEL_SIZE
 
         self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
-        self.upsamp = nn.Upsample(scale_factor=2, mode='bilinear')
+        self.upsamp = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.relu = nn.ReLU()
 
         self.conv32 = self._conv_module(6, 32, conv_kernel, conv_stride, conv_padding, self.relu)
@@ -45,8 +45,7 @@ class Net(nn.Module):
         self.upconv51_3 = self._kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
         self.upconv51_4 = self._kernel_module(64, sep_kernel, conv_kernel, conv_stride, conv_padding, self.upsamp, self.relu)
 
-        # FIXME: Use proper padding
-        self.pad = nn.ConstantPad2d(sep_kernel // 2, 0.0)
+        self.pad = nn.ReplicationPad2d(sep_kernel // 2)
 
         if torch.cuda.is_available() and not config.ALWAYS_SLOW_SEP_CONV:
             self.separable_conv = SeparableConvolution.apply
