@@ -3,44 +3,79 @@
 #
 
 import torch
-from torchvision.transforms import CenterCrop
 import argparse
-import numpy as np
 from PIL import Image
 from timeit import default_timer as timer
-from src.config import CROP_SIZE
+from src.config import OUTPUT_1D_KERNEL_SIZE
+from src.dataset import pil_to_tensor, numpy_to_pil
 
 
-_center_crop = CenterCrop(CROP_SIZE)
+def _get_padding_modules(img_height, img_width):
 
-def _img_trasform(img):
-    # img = _center_crop(img)
-    # MUST mimic the behavior of pil_transform() in dataset.py
-    return torch.from_numpy(np.rollaxis(np.asarray(img) / 255.0, 2)).float()
+    top = OUTPUT_1D_KERNEL_SIZE // 2
+    bottom = OUTPUT_1D_KERNEL_SIZE // 2
+    left = OUTPUT_1D_KERNEL_SIZE // 2
+    right = OUTPUT_1D_KERNEL_SIZE // 2
+
+    padding_width = left + img_width + right
+    padding_height = top + img_height + bottom
+
+    if padding_width != ((padding_width >> 7) << 7):
+        padding_width = (((padding_width >> 7) + 1) << 7)
+
+    if padding_height != ((padding_height >> 7) << 7):
+        padding_height = (((padding_height >> 7) + 1) << 7)
+
+    padding_width = padding_width - (left + img_width + right)
+    padding_height = padding_height - (top + img_height + bottom)
+
+    input_padding_module = torch.nn.ReplicationPad2d([  left,  (right + padding_width),  top,  (bottom + padding_height)])
+    output_padding_module = torch.nn.ReplicationPad2d([-left, -(right + padding_width), -top, -(bottom + padding_height)])
+
+    return input_padding_module, output_padding_module
+
 
 def interpolate(model, frame1, frame2):
 
-    frame1 = _img_trasform(frame1)
-    frame2 = _img_trasform(frame2)
+    assert frame1.size == frame2.size, "Frames must be of the same size to be interpolated"
+
+    frame1 = pil_to_tensor(frame1)
+    frame2 = pil_to_tensor(frame2)
+
+    frame_channels, frame_height, frame_width = frame1.shape
+    assert frame_channels == 3, "Only frames with 3 channels are supported"
+
+    # Generate the padding functions for the given input size
+    input_pad, output_pad = _get_padding_modules(frame_height, frame_width)
+
+    # Use CUDA if possible
+    if torch.cuda.is_available():
+        frame1 = frame1.cuda()
+        frame2 = frame2.cuda()
+        input_pad = input_pad.cuda()
+        output_pad = output_pad.cuda()
+        model = model.cuda()
+
+    # Repackage images in a single tensor
     _input = torch.cat((frame1, frame2), dim=0)
 
-    # _input must be 4D (dim=0 being the index within the batch)
-    _input = _input.view(1, _input.size(0), _input.size(1), _input.size(2))
+    # Input of the model must be 4D (dim=0 being the index within the batch)
+    _input = _input.view(1, frame_channels * 2, frame_height, frame_width)
 
-    if torch.cuda.is_available():
-        _input.cuda()
-        model.cuda()
+    # Apply input padding
+    _input = input_pad(_input)
 
-    output = model(_input).cpu()
-    output = output.detach().numpy()[0]
-    output *= 255.0
-    output = output.clip(0, 255)
+    # Run forward pass
+    output = model(_input)
 
-    # PIL.Image wants the channel as the last dimension
-    output = np.rollaxis(output, 0, 3).astype(np.uint8)
-    frame_out = Image.fromarray(output, mode='RGB')
+    # Apply output padding
+    output = output_pad(output)
 
-    return frame_out
+    # Get numpy representation of the output
+    output = output.cpu().detach().numpy()[0]
+
+    output_pil = numpy_to_pil(output)
+    return output_pil
 
 def interpolate_f(model, path1, path2):
     frames = (Image.open(p).convert('RGB') for p in (path1, path2))
