@@ -43,7 +43,7 @@ if __name__ == '__main__':
     if params.maxframes is not None:
         input_frames = input_frames[:params.maxframes]
 
-    batch_size = len(input_frames)
+    batch_size = len(input_frames)-1
     if params.batchsize is not None and params.batchsize > 0:
         batch_size = min(params.batchsize, batch_size)
 
