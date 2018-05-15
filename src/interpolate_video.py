@@ -19,6 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('--src', type=str, required=True, help='path to the video')
     parser.add_argument('--dest', type=str, required=True, help='output path of the resulting video')
     parser.add_argument('--model', type=str, required=True, help='path of the trained model')
+    parser.add_argument('--maxframes', type=int, required=False, default=None, help='maximum number of processed frames')
     params = parser.parse_args()
 
     tick_t = timer()
@@ -28,17 +29,17 @@ if __name__ == '__main__':
     state_dict = torch.load(params.model)
     model.load_state_dict(state_dict)
 
-    print('===> Reading video...')
-
-    input_frames = imageio.mimread(params.src)
-
-    # FIXME: Get actual framerate
-    input_fps = 15
-
     def convert_frame(arg):
         return Image.fromarray(arg[:, :, :3], mode='RGB')
 
-    input_frames = [convert_frame(x) for x in input_frames]
+    print('===> Reading video...')
+    video_reader = imageio.get_reader(params.src)
+    input_fps = video_reader.get_meta_data()['fps']
+
+    input_frames = [convert_frame(x) for x in video_reader]
+
+    if params.maxframes is not None:
+        input_frames = input_frames[:params.maxframes]
 
     print('===> Interpolating...')
     middle_frames = interpolate_batch(model, input_frames)
