@@ -8,9 +8,11 @@
 # and import this one in it as 'from src.default_config import *'
 #
 
-# The size of the input images to be fed to the network.
-# Image files larger than this size will be cropped (around the center).
+# The size of the input images to be fed to the network during training.
 CROP_SIZE: int = 128
+
+# The size of the patches to be extracted from the datasets
+PATCH_SIZE = (150, 150)
 
 # Number of epochs used for training
 EPOCHS: int = 10
@@ -22,10 +24,10 @@ OUTPUT_1D_KERNEL_SIZE: int = 51
 BATCH_SIZE: int = 100
 
 # Upper limit on the number of samples used for training
-MAX_TRAINING_SAMPLES: int = 10_000
+MAX_TRAINING_SAMPLES: int = 500_000
 
-# Number of workers of the torch.utils.data.DataLoader
-# Set this to 0 to force the DataLoader to work on the main thread
+# Number of workers of the torch.utils.data.DataLoader AND of the data manager
+# Set this to 0 to work on the main thread
 NUM_WORKERS: int = 0
 
 # Random seed fed to torch

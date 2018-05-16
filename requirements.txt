@@ -4,6 +4,8 @@
 numpy
 Pillow
 imageio == 2.3.0
+six
+joblib
 
 # Torch
 torch >= 0.4.0
