@@ -71,6 +71,7 @@ def _tuples_from_davis(davis_dir, res='480p'):
 
         frame_paths = [join(video_dir, x) for x in listdir(video_dir)]
         frame_paths = [x for x in frame_paths if is_image(x)]
+        frame_paths.sort()
 
         for i in range(len(frame_paths) // 3):
             x1, t, x2 = frame_paths[i * 3], frame_paths[i * 3 + 1], frame_paths[i * 3 + 2]
@@ -179,11 +180,11 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
             return json.load(f)
 
     davis_dir = _get_davis(dataset_dir)
-    tuples = _tuples_from_davis(davis_dir, res='480p')
+    tuples = _tuples_from_davis(davis_dir, res='1080p')
 
     workers = config.NUM_WORKERS
     max_per_frame = 20
-    trials_per_tuple = 100
+    trials_per_tuple = 20
 
     tick_t = timer()
 
