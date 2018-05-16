@@ -14,6 +14,9 @@ CROP_SIZE: int = 128
 # The size of the patches to be extracted from the datasets
 PATCH_SIZE = (150, 150)
 
+# Whether or not we should store the patches produced by the data manager
+CACHE_PATCHES: bool = False
+
 # Number of epochs used for training
 EPOCHS: int = 10
 

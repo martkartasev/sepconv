@@ -43,14 +43,20 @@ def numpy_to_pil(x_np):
 
 class PatchDataset(data.Dataset):
 
-    def __init__(self, patches):
+    def __init__(self, patches, use_cache):
         super(PatchDataset, self).__init__()
         self.patches = patches
         self.crop = CenterCrop(config.CROP_SIZE)
+
+        if use_cache:
+            self.load_patch = data_manager.load_cached_patch
+        else:
+            self.load_patch = data_manager.load_patch
+
         print('Dataset ready with {} tuples.'.format(len(patches)))
 
     def __getitem__(self, index):
-        frames = data_manager.load_patch(self.patches[index])
+        frames = self.load_patch(self.patches[index])
         x1, target, x2 = (pil_to_tensor(self.crop(x)) for x in frames)
         input = torch.cat((x1, x2), dim=0)
         return input, target
@@ -72,8 +78,10 @@ class TestDataset(data.Dataset):
 
 def get_training_set():
     patches = data_manager.prepare_dataset()
+    if config.CACHE_PATCHES:
+        patches = data_manager.get_cached_patches()
     patches = patches[:config.MAX_TRAINING_SAMPLES]
-    return PatchDataset(patches)
+    return PatchDataset(patches, config.CACHE_PATCHES)
 
 def get_test_set():
     return TestDataset()

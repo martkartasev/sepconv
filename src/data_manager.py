@@ -10,11 +10,13 @@ from joblib import Parallel, delayed
 from timeit import default_timer as timer
 from torchvision.transforms.functional import crop as crop_image
 from os.path import exists, join, basename, isdir
-from os import makedirs, remove, listdir
+from os import makedirs, remove, listdir, rmdir
 from six.moves import urllib
 from PIL import Image
 import src.config as config
 
+
+############################################# UTILITIES #############################################
 
 def load_img(file_path):
     """
@@ -30,6 +32,26 @@ def is_image(file_path):
     """
     return any(file_path.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
 
+def load_patch(patch):
+    """
+    :param patch: Dictionary containing the details of the patch
+    :return: Tuple of PIL.Image objects corresponding to the patch
+    """
+    paths = (patch['left_frame'], patch['middle_frame'], patch['right_frame'])
+    i, j = (patch['patch_i'], patch['patch_j'])
+    imgs = [load_img(x) for x in paths]
+    h, w = config.PATCH_SIZE
+    return tuple(crop_image(x, i, j, h, w) for x in imgs)
+
+def load_cached_patch(cached_patch):
+    """
+    :param cached_patch: Patch as a tuple (path_to_left, path_to_middle, path_to_right)
+    :return: Tuple of PIL.Image objects corresponding to the patch
+    """
+    return (load_img(x) for x in cached_patch)
+
+
+############################################### DAVIS ###############################################
 
 def _get_davis(dataset_dir):
 
@@ -80,14 +102,27 @@ def _tuples_from_davis(davis_dir, res='480p'):
     return tuples
 
 
-def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0):
+########################################## PATCH EXTRACTION #########################################
+
+def simple_flow(frame1, frame2):
     """
-    :param tuples: List of tuples containing the input frames as (left, middle, right)
-    :param max_per_frame: Maximum number of patches that can be extracted from a frame
-    :param trials_per_tuple: Number of random crops to test for each tuple
-    :param min_avg_flow: Minimum average optical flow for a patch to be selected
-    :return: List of dictionaries representing each patch
+    :param frame1: PIL.Image frame at time t
+    :param frame2: PIL.Image frame at time t+1
+    :return: Numpy array with the flow for each pixel. Shape is same as input
     """
+    # TODO: Implement
+    return np.zeros(frame1.size)
+
+def is_jumpcut(frame1, frame2):
+    """
+    :param frame1: PIL.Image frame at time t
+    :param frame2: PIL.Image frame at time t+1
+    :return: Whether or not there is a jumpcut between the two frames
+    """
+    # TODO: Implement
+    return False
+
+def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0):
 
     patch_h, patch_w = config.PATCH_SIZE
     n_tuples = len(tuples)
@@ -132,35 +167,94 @@ def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow
 
     return all_patches
 
+def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0, workers=0):
+    """
+    :param tuples: List of tuples containing the input frames as (left, middle, right)
+    :param max_per_frame: Maximum number of patches that can be extracted from a frame
+    :param trials_per_tuple: Number of random crops to test for each tuple
+    :param min_avg_flow: Minimum average optical flow for a patch to be selected
+    :return: List of dictionaries representing each patch
+    """
 
-def simple_flow(frame1, frame2):
-    """
-    :param frame1: PIL.Image frame at time t
-    :param frame2: PIL.Image frame at time t+1
-    :return: Numpy array with the flow for each pixel. Shape is same as input
-    """
-    # TODO: Implement
-    return np.zeros(frame1.size)
+    tick_t = timer()
+    print('===> Extracting patches...')
 
-def is_jumpcut(frame1, frame2):
-    """
-    :param frame1: PIL.Image frame at time t
-    :param frame2: PIL.Image frame at time t+1
-    :return: Whether or not there is a jumpcut between the two frames
-    """
-    # TODO: Implement
-    return False
+    if workers != 0:
+        parallel = Parallel(n_jobs=workers, backend='threading', verbose=5)
+        tuples_per_job = len(tuples) // workers + 1
+        result = parallel(
+            delayed(_extract_patches_worker)(tuples[i:i + tuples_per_job], max_per_frame, trials_per_tuple) for i in
+            range(0, len(tuples), tuples_per_job))
+        patches = sum(result, [])
+    else:
+        patches = _extract_patches_worker(tuples, max_per_frame, trials_per_tuple)
 
-def load_patch(patch):
+    tock_t = timer()
+    print("Done. Took ~{}s".format(round(tock_t - tick_t)))
+
+    return patches
+
+
+############################################### CACHE ###############################################
+
+def get_cached_patches(dataset_dir=None):
     """
-    :param patch: Dictionary containing the details of the patch
-    :return: PIL.Image object corresponding to the patch
+    :param dataset_dir: Path to the dataset folder
+    :return: List of patches as tuples (path_to_left, path_to_middle, path_to_right)
     """
-    paths = (patch['left_frame'], patch['middle_frame'], patch['right_frame'])
-    i, j = (patch['patch_i'], patch['patch_j'])
-    imgs = [load_img(x) for x in paths]
-    h, w = config.PATCH_SIZE
-    return tuple(crop_image(x, i, j, h, w) for x in imgs)
+
+    if dataset_dir is None:
+        dataset_dir = config.DATASET_DIR
+
+    cache_dir = join(dataset_dir, 'cache')
+
+    frame_paths = [join(cache_dir, x) for x in listdir(cache_dir)]
+    frame_paths = [x for x in frame_paths if is_image(x)]
+    frame_paths.sort()
+
+    tuples = []
+
+    for i in range(len(frame_paths) // 3):
+        x1, t, x2 = frame_paths[i * 3], frame_paths[i * 3 + 1], frame_paths[i * 3 + 2]
+        tuples.append((x1, t, x2))
+
+    return tuples
+
+def _cache_patches_worker(cache_dir, patches):
+
+    for p in patches:
+        patch_id = str(random.randint(1e10, 1e16))
+        frames = load_patch(p)
+        for i in range(3):
+            file_name = '{}_{}.jpg'.format(patch_id, i)
+            frames[i].save(join(cache_dir, file_name))
+
+def _cache_patches(cache_dir, patches, workers=0):
+    """
+    :param cache_dir: Path to the cache folder
+    :param patches: List of patches
+    """
+
+    if exists(cache_dir):
+        rmdir(cache_dir)
+
+    makedirs(cache_dir)
+
+    tick_t = timer()
+    print('===> Caching patches...')
+
+    if workers != 0:
+        parallel = Parallel(n_jobs=workers, backend='threading', verbose=5)
+        patches_per_job = len(patches) // workers + 1
+        parallel(delayed(_cache_patches_worker)(cache_dir, patches[i:i + patches_per_job]) for i in range(0, len(patches), patches_per_job))
+    else:
+        _cache_patches_worker(cache_dir, patches)
+
+    tock_t = timer()
+    print("Done. Took ~{}s".format(round(tock_t - tick_t)))
+
+
+################################################ MAIN ###############################################
 
 def prepare_dataset(dataset_dir=None, force_rebuild=False):
     """
@@ -172,36 +266,34 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
     if dataset_dir is None:
         dataset_dir = config.DATASET_DIR
 
+    workers = config.NUM_WORKERS
     json_path = join(dataset_dir, 'patches.json')
+    cache_dir = join(dataset_dir, 'cache')
 
     if exists(json_path) and not force_rebuild:
+
         print('===> Patches already processed, reading from JSON...')
         with open(json_path) as f:
-            return json.load(f)
+            patches = json.load(f)
+
+        if config.CACHE_PATCHES and not exists(cache_dir):
+            _cache_patches(cache_dir, patches, workers)
+
+        return patches
 
     davis_dir = _get_davis(dataset_dir)
     tuples = _tuples_from_davis(davis_dir, res='1080p')
 
-    workers = config.NUM_WORKERS
-    max_per_frame = 20
-    trials_per_tuple = 20
+    patches = _extract_patches(tuples, max_per_frame=20, trials_per_tuple=20, workers=workers)
 
-    tick_t = timer()
+    # TODO: shuffle patches before writing to file
+    # ...
 
-    print('===> Extracting patches...')
-    if workers != 0:
-        parallel = Parallel(n_jobs=workers, backend='threading', verbose=5)
-        tuples_per_job = len(tuples)//workers +1
-        result = parallel(delayed(_extract_patches)(tuples[i:i+tuples_per_job], max_per_frame, trials_per_tuple) for i in range(0,len(tuples), tuples_per_job))
-        patches = sum(result, [])
-    else:
-        patches = _extract_patches(tuples, max_per_frame, trials_per_tuple)
-
-    tock_t = timer()
-
-    print("Done. Took ~{}s".format(round(tock_t - tick_t)))
-
+    print('===> Saving JSON...')
     with open(json_path, 'w') as f:
         json.dump(patches, f)
+
+    if config.CACHE_PATCHES:
+        _cache_patches(cache_dir, patches, workers)
 
     return patches
