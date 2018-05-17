@@ -13,3 +13,7 @@ torchvision
 
 # Required by the sepconv lib
 cffi
+
+# OpenCV
+opencv-python
+opencv-contrib-python

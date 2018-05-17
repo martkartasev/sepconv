@@ -6,6 +6,7 @@ import json
 import random
 import zipfile
 import numpy as np
+import cv2 as cv
 from joblib import Parallel, delayed
 from timeit import default_timer as timer
 from torchvision.transforms.functional import crop as crop_image
@@ -13,6 +14,7 @@ from os.path import exists, join, basename, isdir
 from os import makedirs, remove, listdir, rmdir
 from six.moves import urllib
 from PIL import Image
+
 import src.config as config
 
 
@@ -25,12 +27,14 @@ def load_img(file_path):
     """
     return Image.open(file_path).convert('RGB')
 
+
 def is_image(file_path):
     """
     :param file_path: Path to the candidate file
     :return: Whether or not the file is a usable image
     """
     return any(file_path.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
+
 
 def load_patch(patch):
     """
@@ -43,6 +47,7 @@ def load_patch(patch):
     h, w = config.PATCH_SIZE
     return tuple(crop_image(x, i, j, h, w) for x in imgs)
 
+
 def load_cached_patch(cached_patch):
     """
     :param cached_patch: Patch as a tuple (path_to_left, path_to_middle, path_to_right)
@@ -54,7 +59,6 @@ def load_cached_patch(cached_patch):
 ############################################### DAVIS ###############################################
 
 def _get_davis(dataset_dir):
-
     davis_dir = join(dataset_dir, "DAVIS")
 
     if not exists(davis_dir):
@@ -81,9 +85,9 @@ def _get_davis(dataset_dir):
 
     return davis_dir
 
-def _tuples_from_davis(davis_dir, res='480p'):
 
-    subdir = join(davis_dir, "JPEGImages/"+res)
+def _tuples_from_davis(davis_dir, res='480p'):
+    subdir = join(davis_dir, "JPEGImages/" + res)
 
     video_dirs = [join(subdir, x) for x in listdir(subdir)]
     video_dirs = [x for x in video_dirs if isdir(x)]
@@ -110,8 +114,19 @@ def simple_flow(frame1, frame2):
     :param frame2: PIL.Image frame at time t+1
     :return: Numpy array with the flow for each pixel. Shape is same as input
     """
-    # TODO: Implement
-    return np.zeros(frame1.size)
+    frame1 = pil_to_opencv(frame1)
+    frame2 = pil_to_opencv(frame2)
+    flow = cv.optflow.calcOpticalFlowSF(frame1, frame2, layers=3, averaging_block_size=2, max_flow=4)
+    n = np.sum(1 - np.isnan(flow), axis=(0, 1))
+    flow[np.isnan(flow)] = 0
+    return np.linalg.norm(np.sum(flow, axis=(0, 1)) / n)
+
+
+def pil_to_opencv(frame):
+    open_cv_image = np.array(frame)
+    # Convert RGB to BGR
+    return open_cv_image[:, :, ::-1]
+
 
 def is_jumpcut(frame1, frame2):
     """
@@ -122,8 +137,8 @@ def is_jumpcut(frame1, frame2):
     # TODO: Implement
     return False
 
-def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0):
 
+def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0):
     patch_h, patch_w = config.PATCH_SIZE
     n_tuples = len(tuples)
     all_patches = []
@@ -166,6 +181,7 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
         # print("===> Tuple {}/{} ready.".format(tup_index+1, n_tuples))
 
     return all_patches
+
 
 def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0, workers=0):
     """
@@ -220,14 +236,15 @@ def get_cached_patches(dataset_dir=None):
 
     return tuples
 
-def _cache_patches_worker(cache_dir, patches):
 
+def _cache_patches_worker(cache_dir, patches):
     for p in patches:
         patch_id = str(random.randint(1e10, 1e16))
         frames = load_patch(p)
         for i in range(3):
             file_name = '{}_{}.jpg'.format(patch_id, i)
             frames[i].save(join(cache_dir, file_name))
+
 
 def _cache_patches(cache_dir, patches, workers=0):
     """
@@ -246,7 +263,8 @@ def _cache_patches(cache_dir, patches, workers=0):
     if workers != 0:
         parallel = Parallel(n_jobs=workers, backend='threading', verbose=5)
         patches_per_job = len(patches) // workers + 1
-        parallel(delayed(_cache_patches_worker)(cache_dir, patches[i:i + patches_per_job]) for i in range(0, len(patches), patches_per_job))
+        parallel(delayed(_cache_patches_worker)(cache_dir, patches[i:i + patches_per_job]) for i in
+                 range(0, len(patches), patches_per_job))
     else:
         _cache_patches_worker(cache_dir, patches)
 
@@ -297,3 +315,7 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
         _cache_patches(cache_dir, patches, workers)
 
     return patches
+
+
+if __name__ == "__main__":
+    print(simple_flow(load_img("55286092923681_0.jpg"), load_img("55286092923681_2.jpg")))
