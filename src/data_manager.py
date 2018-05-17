@@ -148,14 +148,16 @@ def pil_to_opencv(frame):
     return open_cv_image[:, :, ::-1]
 
 
-def is_jumpcut(frame1, frame2):
+def is_jumpcut(frame1, frame2, threshold=np.inf):
     """
     Detects a jumpcut between the two frames.
     :param frame1: PIL.Image frame at time t
     :param frame2: PIL.Image frame at time t+1
     :return: Whether or not there is a jumpcut between the two frames
     """
-    # TODO: Implement
+    if np.mean(np.abs(frame1 - frame2)) > threshold:
+
+        return True
     return False
 
 
@@ -351,3 +353,6 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
         _cache_patches(cache_dir, patches, workers)
 
     return patches
+
+if __name__ == "__main__":
+    print(is_jumpcut(pil_to_opencv(load_img("983664900138958_0.jpg")), pil_to_opencv(load_img("983664900138958_2.jpg"))))
