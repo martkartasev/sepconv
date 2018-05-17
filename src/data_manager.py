@@ -130,29 +130,21 @@ def _tuples_from_davis(davis_dir, res='480p'):
 def simple_flow(frame1, frame2):
     """
     Runs SimpleFlow given two consecutive frames.
-    :param frame1: PIL.Image frame at time t
-    :param frame2: PIL.Image frame at time t+1
+    :param frame1: Numpy array of the frame at time t
+    :param frame2: Numpy array of the frame at time t+1
     :return: Numpy array with the flow for each pixel. Shape is same as input
     """
-    frame1 = pil_to_opencv(frame1)
-    frame2 = pil_to_opencv(frame2)
     flow = cv.optflow.calcOpticalFlowSF(frame1, frame2, layers=3, averaging_block_size=2, max_flow=4)
     n = np.sum(1 - np.isnan(flow), axis=(0, 1))
     flow[np.isnan(flow)] = 0
     return np.linalg.norm(np.sum(flow, axis=(0, 1)) / n)
 
 
-def pil_to_opencv(frame):
-    open_cv_image = np.array(frame)
-    # Convert RGB to BGR
-    return open_cv_image[:, :, ::-1]
-
-
 def is_jumpcut(frame1, frame2, threshold=np.inf):
     """
     Detects a jumpcut between the two frames.
-    :param frame1: PIL.Image frame at time t
-    :param frame2: PIL.Image frame at time t+1
+    :param frame1: Numpy array of the frame at time t
+    :param frame2: Numpy array of the frame at time t+1
     :return: Whether or not there is a jumpcut between the two frames
     """
     if np.mean(np.abs(frame1 - frame2)) > threshold:
@@ -176,11 +168,17 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
     n_tuples = len(tuples)
     all_patches = []
 
+    pil_to_numpy = lambda x: np.array(x)[:, :, ::-1]
+
     for tup_index in range(n_tuples):
         tup = tuples[tup_index]
 
         left, middle, right = (load_img(x) for x in tup)
         img_w, img_h = left.size
+
+        left = pil_to_numpy(left)
+        middle = pil_to_numpy(middle)
+        right = pil_to_numpy(right)
 
         if is_jumpcut(left, middle) or is_jumpcut(middle, right):
             continue
@@ -192,11 +190,10 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
             i = random.randint(0, img_h - patch_h)
             j = random.randint(0, img_w - patch_w)
 
-            left_patch = crop_image(left, i, j, patch_h, patch_w)
-            right_patch = crop_image(right, i, j, patch_h, patch_w)
-            # middle_patch = crop_image(middle, i, j, patch_h, patch_w)
+            left_patch = left[i:i+patch_h, j:j+patch_w, :]
+            right_patch = right[i:i+patch_h, j:j+patch_w, :]
 
-            avg_flow = np.mean(simple_flow(left_patch, right_patch))
+            avg_flow = simple_flow(left_patch, right_patch)
             if avg_flow < min_avg_flow:
                 continue
 
