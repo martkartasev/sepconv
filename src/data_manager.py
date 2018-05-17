@@ -22,6 +22,7 @@ import src.config as config
 
 def load_img(file_path):
     """
+    Reads an image from disk.
     :param file_path: Path to the image file
     :return: PIL.Image object
     """
@@ -30,14 +31,16 @@ def load_img(file_path):
 
 def is_image(file_path):
     """
+    Checks if the specified file is an image
     :param file_path: Path to the candidate file
-    :return: Whether or not the file is a usable image
+    :return: Whether or not the file is an image
     """
     return any(file_path.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
 
 
 def load_patch(patch):
     """
+    Reads the three images of a patch from disk and returns them already cropped.
     :param patch: Dictionary containing the details of the patch
     :return: Tuple of PIL.Image objects corresponding to the patch
     """
@@ -50,6 +53,8 @@ def load_patch(patch):
 
 def load_cached_patch(cached_patch):
     """
+    Reads the three cached images of a patch from disk. Can only be used if the patches
+    have been previously cached.
     :param cached_patch: Patch as a tuple (path_to_left, path_to_middle, path_to_right)
     :return: Tuple of PIL.Image objects corresponding to the patch
     """
@@ -59,6 +64,12 @@ def load_cached_patch(cached_patch):
 ############################################### DAVIS ###############################################
 
 def _get_davis(dataset_dir):
+    """
+    Returns the local path to the DAVIS dataset, given its root directory. The dataset
+    is downloaded if not found on disk.
+    :param dataset_dir: Path to the dataset directory
+    :return: Path to the DAVIS dataset
+    """
     davis_dir = join(dataset_dir, "DAVIS")
 
     if not exists(davis_dir):
@@ -85,6 +96,13 @@ def _get_davis(dataset_dir):
 
     return davis_dir
 
+    """
+    Finds all images of the specified resolution from the DAVIS dataset. The found paths
+    are returned as tuples of three elements.
+    :param davis_dir: Path to the DAVIS dataset directory
+    :param res: Resolution of the DAVIS images (either '480p' or '1080p')
+    :return: List of paths as tuples (path_to_left, path_to_middle, path_to_right)
+    """
 
 def _tuples_from_davis(davis_dir, res='480p'):
     subdir = join(davis_dir, "JPEGImages/" + res)
@@ -110,6 +128,7 @@ def _tuples_from_davis(davis_dir, res='480p'):
 
 def simple_flow(frame1, frame2):
     """
+    Runs SimpleFlow given two consecutive frames.
     :param frame1: PIL.Image frame at time t
     :param frame2: PIL.Image frame at time t+1
     :return: Numpy array with the flow for each pixel. Shape is same as input
@@ -130,6 +149,7 @@ def pil_to_opencv(frame):
 
 def is_jumpcut(frame1, frame2):
     """
+    Detects a jumpcut between the two frames.
     :param frame1: PIL.Image frame at time t
     :param frame2: PIL.Image frame at time t+1
     :return: Whether or not there is a jumpcut between the two frames
@@ -137,6 +157,15 @@ def is_jumpcut(frame1, frame2):
     # TODO: Implement
     return False
 
+    """
+    Extracts small patches from the original frames. The patches are selected to maximize
+    their contribution to the training.
+    :param tuples: List of tuples containing the input frames as (left, middle, right)
+    :param max_per_frame: Maximum number of patches that can be extracted from a frame
+    :param trials_per_tuple: Number of random crops to test for each tuple
+    :param min_avg_flow: Minimum average optical flow for a patch to be selected
+    :return: List of dictionaries representing each patch
+    """
 
 def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0):
     patch_h, patch_w = config.PATCH_SIZE
@@ -185,11 +214,8 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
 
 def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0, workers=0):
     """
-    :param tuples: List of tuples containing the input frames as (left, middle, right)
-    :param max_per_frame: Maximum number of patches that can be extracted from a frame
-    :param trials_per_tuple: Number of random crops to test for each tuple
-    :param min_avg_flow: Minimum average optical flow for a patch to be selected
-    :return: List of dictionaries representing each patch
+    Spawns the specified number of workers running _extract_patches_worker().
+    Call this with workers=0 to run on the current thread.
     """
 
     tick_t = timer()
@@ -215,8 +241,9 @@ def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow
 
 def get_cached_patches(dataset_dir=None):
     """
+    Finds the cached patches (stored as images) from disk and returns their paths as a list of tuples
     :param dataset_dir: Path to the dataset folder
-    :return: List of patches as tuples (path_to_left, path_to_middle, path_to_right)
+    :return: List of paths to patches as tuples (path_to_left, path_to_middle, path_to_right)
     """
 
     if dataset_dir is None:
@@ -236,6 +263,11 @@ def get_cached_patches(dataset_dir=None):
 
     return tuples
 
+    """
+    Writes to disk the specified patches as images.
+    :param cache_dir: Path to the cache folder
+    :param patches: List of patches
+    """
 
 def _cache_patches_worker(cache_dir, patches):
     for p in patches:
@@ -248,8 +280,8 @@ def _cache_patches_worker(cache_dir, patches):
 
 def _cache_patches(cache_dir, patches, workers=0):
     """
-    :param cache_dir: Path to the cache folder
-    :param patches: List of patches
+    Spawns the specified number of workers running _cache_patches_worker().
+    Call this with workers=0 to run on the current thread.
     """
 
     if exists(cache_dir):
@@ -276,6 +308,8 @@ def _cache_patches(cache_dir, patches, workers=0):
 
 def prepare_dataset(dataset_dir=None, force_rebuild=False):
     """
+    Performs all necessary operations to get the training dataset ready, such as
+    selecting patches, caching the cropped versions if necessary, etc..
     :param dataset_dir: Path to the dataset folder
     :param force_rebuild: Whether or not the patches should be extracted again, even if a cached version exists on disk
     :return: List of patches
@@ -304,8 +338,8 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
 
     patches = _extract_patches(tuples, max_per_frame=20, trials_per_tuple=20, workers=workers)
 
-    # TODO: shuffle patches before writing to file
-    # ...
+    # shuffle patches before writing to file
+    random.shuffle(patches)
 
     print('===> Saving JSON...')
     with open(json_path, 'w') as f:

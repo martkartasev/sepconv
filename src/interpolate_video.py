@@ -20,8 +20,8 @@ if __name__ == '__main__':
     parser.add_argument('--src', type=str, required=True, help='path to the video')
     parser.add_argument('--dest', type=str, required=True, help='output path of the resulting video')
     parser.add_argument('--model', type=str, required=True, help='path of the trained model')
-    parser.add_argument('--maxframes', type=int, required=False, default=None, help='maximum number of processed frames')
-    parser.add_argument('--batchsize', type=int, required=False, default=None, help='size of each batch that should go through the network')
+    parser.add_argument('--inputlimit', type=int, required=False, default=None, help='maximum number of processed input frames')
+    parser.add_argument('--batchsize', type=int, required=False, default=None, help='number of frames to be processed at the same time (i.e. number of interpolations in parallel +1)')
     params = parser.parse_args()
 
     tick_t = timer()
@@ -40,8 +40,8 @@ if __name__ == '__main__':
 
     input_frames = [convert_frame(x) for x in video_reader]
 
-    if params.maxframes is not None:
-        input_frames = input_frames[:params.maxframes]
+    if params.inputlimit is not None:
+        input_frames = input_frames[:params.inputlimit]
     n_input_frames = len(input_frames)
 
     batch_size = n_input_frames
