@@ -349,7 +349,3 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
         _cache_patches(cache_dir, patches, workers)
 
     return patches
-
-
-if __name__ == "__main__":
-    print(simple_flow(load_img("55286092923681_0.jpg"), load_img("55286092923681_2.jpg")))
