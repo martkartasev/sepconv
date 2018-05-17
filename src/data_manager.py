@@ -96,6 +96,8 @@ def _get_davis(dataset_dir):
 
     return davis_dir
 
+
+def _tuples_from_davis(davis_dir, res='480p'):
     """
     Finds all images of the specified resolution from the DAVIS dataset. The found paths
     are returned as tuples of three elements.
@@ -104,7 +106,6 @@ def _get_davis(dataset_dir):
     :return: List of paths as tuples (path_to_left, path_to_middle, path_to_right)
     """
 
-def _tuples_from_davis(davis_dir, res='480p'):
     subdir = join(davis_dir, "JPEGImages/" + res)
 
     video_dirs = [join(subdir, x) for x in listdir(subdir)]
@@ -157,6 +158,8 @@ def is_jumpcut(frame1, frame2):
     # TODO: Implement
     return False
 
+
+def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0):
     """
     Extracts small patches from the original frames. The patches are selected to maximize
     their contribution to the training.
@@ -167,7 +170,6 @@ def is_jumpcut(frame1, frame2):
     :return: List of dictionaries representing each patch
     """
 
-def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0):
     patch_h, patch_w = config.PATCH_SIZE
     n_tuples = len(tuples)
     all_patches = []
@@ -263,13 +265,13 @@ def get_cached_patches(dataset_dir=None):
 
     return tuples
 
+
+def _cache_patches_worker(cache_dir, patches):
     """
     Writes to disk the specified patches as images.
     :param cache_dir: Path to the cache folder
     :param patches: List of patches
     """
-
-def _cache_patches_worker(cache_dir, patches):
     for p in patches:
         patch_id = str(random.randint(1e10, 1e16))
         frames = load_patch(p)
