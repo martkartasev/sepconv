@@ -58,7 +58,7 @@ def load_cached_patch(cached_patch):
     :param cached_patch: Patch as a tuple (path_to_left, path_to_middle, path_to_right)
     :return: Tuple of PIL.Image objects corresponding to the patch
     """
-    return (load_img(x) for x in cached_patch)
+    return tuple(load_img(x) for x in cached_patch)
 
 
 ############################################### DAVIS ###############################################

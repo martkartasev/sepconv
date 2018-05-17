@@ -4,8 +4,9 @@
 
 import torch.utils.data as data
 import torch
-from torchvision.transforms import CenterCrop
+from torchvision.transforms import CenterCrop, RandomHorizontalFlip, RandomVerticalFlip, RandomRotation
 import numpy as np
+import random
 from PIL import Image
 import src.data_manager as data_manager
 import src.config as config
@@ -43,10 +44,17 @@ def numpy_to_pil(x_np):
 
 class PatchDataset(data.Dataset):
 
-    def __init__(self, patches, use_cache):
+    def __init__(self, patches, use_cache, augment_data):
         super(PatchDataset, self).__init__()
         self.patches = patches
         self.crop = CenterCrop(config.CROP_SIZE)
+
+        if augment_data:
+            self.random_transforms = [RandomRotation((90, 90)), RandomVerticalFlip(1.0), RandomHorizontalFlip(1.0), (lambda x: x)]
+            self.get_aug_transform = (lambda: random.sample(self.random_transforms, 1)[0])
+        else:
+            # Transform does nothing. Not sure if horrible or very elegant...
+            self.get_aug_transform = (lambda: (lambda x: x))
 
         if use_cache:
             self.load_patch = data_manager.load_cached_patch
@@ -57,7 +65,8 @@ class PatchDataset(data.Dataset):
 
     def __getitem__(self, index):
         frames = self.load_patch(self.patches[index])
-        x1, target, x2 = (pil_to_tensor(self.crop(x)) for x in frames)
+        aug_transform = self.get_aug_transform()
+        x1, target, x2 = (pil_to_tensor(self.crop(aug_transform(x))) for x in frames)
         input = torch.cat((x1, x2), dim=0)
         return input, target
 
@@ -81,7 +90,7 @@ def get_training_set():
     if config.CACHE_PATCHES:
         patches = data_manager.get_cached_patches()
     patches = patches[:config.MAX_TRAINING_SAMPLES]
-    return PatchDataset(patches, config.CACHE_PATCHES)
+    return PatchDataset(patches, config.CACHE_PATCHES, config.AUGMENT_DATA)
 
 def get_test_set():
     return TestDataset()

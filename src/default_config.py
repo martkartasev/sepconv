@@ -53,3 +53,6 @@ ALWAYS_SLOW_SEP_CONV: bool = False
 
 # Whether or not we should run the test set on the model at each epoch
 TEST_ENABLED: bool = False
+
+# Whether or not the data should be augmented with random transformations
+AUGMENT_DATA: bool = True
