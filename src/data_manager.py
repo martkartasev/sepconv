@@ -194,7 +194,7 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
             right_patch = crop_image(right, i, j, patch_h, patch_w)
             # middle_patch = crop_image(middle, i, j, patch_h, patch_w)
 
-            avg_flow = np.mean(simple_flow(left_patch, right_patch))
+            avg_flow = simple_flow(left_patch, right_patch)
             if avg_flow < min_avg_flow:
                 continue
 
