@@ -140,18 +140,27 @@ def simple_flow(frame1, frame2):
     return np.linalg.norm(np.sum(flow, axis=(0, 1)) / n)
 
 
+<<<<<<< HEAD
+def pil_to_opencv(frame):
+    open_cv_image = np.array(frame)
+    # Convert RGB to BGR
+    return open_cv_image[:, :, ::-1]
+
+
 def is_jumpcut(frame1, frame2, threshold=np.inf):
+=======
+def is_jumpcut(frame1, frame2):
+>>>>>>> 75d5f8628174d0dccb3aee8ea53f79c087f96d8b
     """
     Detects a jumpcut between the two frames.
     :param frame1: Numpy array of the frame at time t
     :param frame2: Numpy array of the frame at time t+1
     :return: Whether or not there is a jumpcut between the two frames
     """
-    hist = lambda x: np.histogram(x.reshape(-1), 8, (0, 255))[0]
-    mse = lambda a, b: ((hist(a) - hist(b)) ** 2).mean()
-    return mse(frame1[:, :, 0], frame2[:, :, 0]) > threshold or \
-           mse(frame1[:, :, 1], frame2[:, :, 1]) > threshold or \
-           mse(frame1[:, :, 2], frame2[:, :, 2]) > threshold
+    if np.mean(np.abs(frame1 - frame2)) > threshold:
+
+        return True
+    return False
 
 
 def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0):
@@ -191,8 +200,8 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
             i = random.randint(0, img_h - patch_h)
             j = random.randint(0, img_w - patch_w)
 
-            left_patch = left[i:i + patch_h, j:j + patch_w, :]
-            right_patch = right[i:i + patch_h, j:j + patch_w, :]
+            left_patch = left[i:i+patch_h, j:j+patch_w, :]
+            right_patch = right[i:i+patch_h, j:j+patch_w, :]
 
             avg_flow = simple_flow(left_patch, right_patch)
             if avg_flow < min_avg_flow:
@@ -351,3 +360,6 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
         _cache_patches(cache_dir, patches, workers)
 
     return patches
+
+if __name__ == "__main__":
+    print(is_jumpcut(pil_to_opencv(load_img("983664900138958_0.jpg")), pil_to_opencv(load_img("983664900138958_2.jpg"))))
