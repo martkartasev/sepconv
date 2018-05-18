@@ -11,7 +11,7 @@ from joblib import Parallel, delayed
 from timeit import default_timer as timer
 from torchvision.transforms.functional import crop as crop_image
 from os.path import exists, join, basename, isdir
-from os import makedirs, remove, listdir, rmdir
+from os import makedirs, remove, listdir, rmdir, rename
 from six.moves import urllib
 from PIL import Image
 
@@ -68,7 +68,7 @@ def _get_davis_16(dataset_dir):
 
 
 def _get_davis_17(dataset_dir):
-    return _get_davis(dataset_dir, "DAVIS17", "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-test-dev-Full-Resolution.zip")
+    return _get_davis(dataset_dir, "DAVIS17", "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-test-dev-480p.zip")
 
 
 def _get_davis(dataset_dir, folder, url):
@@ -79,13 +79,17 @@ def _get_davis(dataset_dir, folder, url):
     :return: Path to the DAVIS dataset
     """
     davis_dir = join(dataset_dir, folder)
+    tmp_dir = join(dataset_dir, 'tmp')
 
     if not exists(davis_dir):
 
         if not exists(dataset_dir):
             makedirs(dataset_dir)
 
-        print("===> Downloading DAVIS...")
+        if not exists(tmp_dir):
+            makedirs(tmp_dir)
+
+        print("===> Downloading {}...".format(folder))
         response = urllib.request.urlopen(url)
         zip_path = join(dataset_dir, basename(url))
         with open(zip_path, 'wb') as f:
@@ -94,11 +98,16 @@ def _get_davis(dataset_dir, folder, url):
         zip_ref = zipfile.ZipFile(zip_path, 'r')
 
         print("===> Extracting data...")
-        zip_ref.extractall(dataset_dir)
+        zip_ref.extractall(tmp_dir)
         zip_ref.close()
 
-        # Remove downloaded zip file
+        # Move folder to desired path
+        extracted_folder = join(tmp_dir, listdir(tmp_dir)[0])
+        rename(extracted_folder, davis_dir)
+
+        # Remove temporary files
         remove(zip_path)
+        rmdir(tmp_dir)
 
     return davis_dir
 
