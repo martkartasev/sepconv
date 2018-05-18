@@ -200,7 +200,7 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
 
             if is_jumpcut(left_patch, middle_patch, jumpcut_threshold) or \
                is_jumpcut(middle_patch, right_patch, jumpcut_threshold):
-                ++jumpcuts
+                jumpcuts += 1
                 continue
 
             avg_flow = simple_flow(left_patch, right_patch)
@@ -351,7 +351,7 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
     davis_dir = _get_davis(dataset_dir)
     tuples = _tuples_from_davis(davis_dir, res='1080p')
 
-    patches = _extract_patches(tuples[:20], max_per_frame=20, trials_per_tuple=20, jumpcut_threshold=8e-3, workers=0)
+    patches = _extract_patches(tuples, max_per_frame=20, trials_per_tuple=20, jumpcut_threshold=8e-3, workers=0)
 
     # shuffle patches before writing to file
     random.shuffle(patches)
