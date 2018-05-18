@@ -157,14 +157,15 @@ def is_jumpcut(frame1, frame2, threshold=np.inf):
            err(frame1[:, :, 2], frame2[:, :, 2]) > threshold
 
 
-def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0, jumpcut_threshold=np.inf):
+def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, flow_threshold=0.0,
+                            jumpcut_threshold=np.inf):
     """
     Extracts small patches from the original frames. The patches are selected to maximize
     their contribution to the training.
     :param tuples: List of tuples containing the input frames as (left, middle, right)
     :param max_per_frame: Maximum number of patches that can be extracted from a frame
     :param trials_per_tuple: Number of random crops to test for each tuple
-    :param min_avg_flow: Minimum average optical flow for a patch to be selected
+    :param flow_threshold: Minimum average optical flow for a patch to be selected
     :param jumpcut_threshold: ...
     :return: List of dictionaries representing each patch
     """
@@ -173,6 +174,7 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
     n_tuples = len(tuples)
     all_patches = []
     jumpcuts = 0
+    flowfiltered = 0
     total_iters = n_tuples * trials_per_tuple
 
     pil_to_numpy = lambda x: np.array(x)[:, :, ::-1]
@@ -199,12 +201,13 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
             middle_patch = middle[i:i + patch_h, j:j + patch_w, :]
 
             if is_jumpcut(left_patch, middle_patch, jumpcut_threshold) or \
-               is_jumpcut(middle_patch, right_patch, jumpcut_threshold):
+                    is_jumpcut(middle_patch, right_patch, jumpcut_threshold):
                 jumpcuts += 1
                 continue
 
             avg_flow = simple_flow(left_patch, right_patch)
-            if avg_flow < min_avg_flow:
+            if random.random() > avg_flow / flow_threshold:
+                flowfiltered += 1
                 continue
 
             selected_patches.append({
@@ -220,14 +223,15 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
         all_patches += selected_patches[:max_per_frame]
         # print("===> Tuple {}/{} ready.".format(tup_index+1, n_tuples))
 
-    print('===> Processed {} tuples, {} patches extracted, {} discarded as jumpcuts'.format(
-        n_tuples, len(all_patches), 100.0*jumpcuts/total_iters
+    print('===> Processed {} tuples, {} patches extracted, {} discarded as jumpcuts, {} filtered by flow'.format(
+        n_tuples, len(all_patches), 100.0 * jumpcuts / total_iters, 100.0 * flowfiltered / total_iters
     ))
 
     return all_patches
 
 
-def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0, jumpcut_threshold=np.inf, workers=0):
+def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, flow_threshold=25.0, jumpcut_threshold=np.inf,
+                     workers=0):
     """
     Spawns the specified number of workers running _extract_patches_worker().
     Call this with workers=0 to run on the current thread.
@@ -240,11 +244,12 @@ def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow
         parallel = Parallel(n_jobs=workers, backend='threading', verbose=5)
         tuples_per_job = len(tuples) // workers + 1
         result = parallel(
-            delayed(_extract_patches_worker)(tuples[i:i + tuples_per_job], max_per_frame, trials_per_tuple, min_avg_flow, jumpcut_threshold) for i in
+            delayed(_extract_patches_worker)(tuples[i:i + tuples_per_job], max_per_frame, trials_per_tuple,
+                                             flow_threshold, jumpcut_threshold) for i in
             range(0, len(tuples), tuples_per_job))
         patches = sum(result, [])
     else:
-        patches = _extract_patches_worker(tuples, max_per_frame, trials_per_tuple, min_avg_flow, jumpcut_threshold)
+        patches = _extract_patches_worker(tuples, max_per_frame, trials_per_tuple, flow_threshold, jumpcut_threshold)
 
     tock_t = timer()
     print("Done. Took ~{}s".format(round(tock_t - tick_t)))
