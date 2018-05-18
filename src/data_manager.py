@@ -145,16 +145,19 @@ def is_jumpcut(frame1, frame2, threshold=np.inf):
     Detects a jumpcut between the two frames.
     :param frame1: Numpy array of the frame at time t
     :param frame2: Numpy array of the frame at time t+1
+    :param threshold: Maximum difference allowed for the frames to be considered consecutive
     :return: Whether or not there is a jumpcut between the two frames
     """
-    hist = lambda x: np.histogram(x.reshape(-1), 8, (0, 255))[0]
-    mse = lambda a, b: ((hist(a) - hist(b)) ** 2).mean()
-    return mse(frame1[:, :, 0], frame2[:, :, 0]) > threshold or \
-           mse(frame1[:, :, 1], frame2[:, :, 1]) > threshold or \
-           mse(frame1[:, :, 2], frame2[:, :, 2]) > threshold
+    pixels_per_channel = frame1.size / 3
+    hist = lambda x: np.histogram(x.reshape(-1), 8, (0, 255))[0] / pixels_per_channel
+    err = lambda a, b: ((hist(a) - hist(b)) ** 2).mean()
+
+    return err(frame1[:, :, 0], frame2[:, :, 0]) > threshold or \
+           err(frame1[:, :, 1], frame2[:, :, 1]) > threshold or \
+           err(frame1[:, :, 2], frame2[:, :, 2]) > threshold
 
 
-def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0):
+def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0, jumpcut_threshold=np.inf):
     """
     Extracts small patches from the original frames. The patches are selected to maximize
     their contribution to the training.
@@ -162,12 +165,15 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
     :param max_per_frame: Maximum number of patches that can be extracted from a frame
     :param trials_per_tuple: Number of random crops to test for each tuple
     :param min_avg_flow: Minimum average optical flow for a patch to be selected
+    :param jumpcut_threshold: ...
     :return: List of dictionaries representing each patch
     """
 
     patch_h, patch_w = config.PATCH_SIZE
     n_tuples = len(tuples)
     all_patches = []
+    jumpcuts = 0
+    total_iters = n_tuples * trials_per_tuple
 
     pil_to_numpy = lambda x: np.array(x)[:, :, ::-1]
 
@@ -181,9 +187,6 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
         middle = pil_to_numpy(middle)
         right = pil_to_numpy(right)
 
-        if is_jumpcut(left, middle) or is_jumpcut(middle, right):
-            continue
-
         selected_patches = []
 
         for _ in range(trials_per_tuple):
@@ -193,6 +196,12 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
 
             left_patch = left[i:i + patch_h, j:j + patch_w, :]
             right_patch = right[i:i + patch_h, j:j + patch_w, :]
+            middle_patch = middle[i:i + patch_h, j:j + patch_w, :]
+
+            if is_jumpcut(left_patch, middle_patch, jumpcut_threshold) or \
+               is_jumpcut(middle_patch, right_patch, jumpcut_threshold):
+                ++jumpcuts
+                continue
 
             avg_flow = simple_flow(left_patch, right_patch)
             if avg_flow < min_avg_flow:
@@ -211,10 +220,14 @@ def _extract_patches_worker(tuples, max_per_frame=1, trials_per_tuple=100, min_a
         all_patches += selected_patches[:max_per_frame]
         # print("===> Tuple {}/{} ready.".format(tup_index+1, n_tuples))
 
+    print('===> Processed {} tuples, {} patches extracted, {} discarded as jumpcuts'.format(
+        n_tuples, len(all_patches), 100.0*jumpcuts/total_iters
+    ))
+
     return all_patches
 
 
-def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0, workers=0):
+def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow=0.0, jumpcut_threshold=np.inf, workers=0):
     """
     Spawns the specified number of workers running _extract_patches_worker().
     Call this with workers=0 to run on the current thread.
@@ -227,11 +240,11 @@ def _extract_patches(tuples, max_per_frame=1, trials_per_tuple=100, min_avg_flow
         parallel = Parallel(n_jobs=workers, backend='threading', verbose=5)
         tuples_per_job = len(tuples) // workers + 1
         result = parallel(
-            delayed(_extract_patches_worker)(tuples[i:i + tuples_per_job], max_per_frame, trials_per_tuple) for i in
+            delayed(_extract_patches_worker)(tuples[i:i + tuples_per_job], max_per_frame, trials_per_tuple, min_avg_flow, jumpcut_threshold) for i in
             range(0, len(tuples), tuples_per_job))
         patches = sum(result, [])
     else:
-        patches = _extract_patches_worker(tuples, max_per_frame, trials_per_tuple)
+        patches = _extract_patches_worker(tuples, max_per_frame, trials_per_tuple, min_avg_flow, jumpcut_threshold)
 
     tock_t = timer()
     print("Done. Took ~{}s".format(round(tock_t - tick_t)))
@@ -338,7 +351,7 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
     davis_dir = _get_davis(dataset_dir)
     tuples = _tuples_from_davis(davis_dir, res='1080p')
 
-    patches = _extract_patches(tuples, max_per_frame=20, trials_per_tuple=20, workers=workers)
+    patches = _extract_patches(tuples[:20], max_per_frame=20, trials_per_tuple=20, jumpcut_threshold=8e-3, workers=0)
 
     # shuffle patches before writing to file
     random.shuffle(patches)
