@@ -63,21 +63,27 @@ def load_cached_patch(cached_patch):
 
 ############################################### DAVIS ###############################################
 
-def _get_davis(dataset_dir):
+def _get_davis_16(dataset_dir):
+    return _get_davis(dataset_dir, "DAVIS", "https://graphics.ethz.ch/Downloads/Data/Davis/DAVIS-data.zip")
+
+
+def _get_davis_17(dataset_dir):
+    return _get_davis(dataset_dir, "DAVIS17", "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-test-dev-Full-Resolution.zip")
+
+
+def _get_davis(dataset_dir, folder, url):
     """
     Returns the local path to the DAVIS dataset, given its root directory. The dataset
     is downloaded if not found on disk.
     :param dataset_dir: Path to the dataset directory
     :return: Path to the DAVIS dataset
     """
-    davis_dir = join(dataset_dir, "DAVIS")
+    davis_dir = join(dataset_dir, folder)
 
     if not exists(davis_dir):
 
         if not exists(dataset_dir):
             makedirs(dataset_dir)
-
-        url = "https://graphics.ethz.ch/Downloads/Data/Davis/DAVIS-data.zip"
 
         print("===> Downloading DAVIS...")
         response = urllib.request.urlopen(url)
@@ -353,7 +359,7 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
 
         return patches
 
-    davis_dir = _get_davis(dataset_dir)
+    davis_dir = _get_davis_16(dataset_dir)
     tuples = _tuples_from_davis(davis_dir, res='1080p')
 
     patches = _extract_patches(tuples, max_per_frame=20, trials_per_tuple=20, jumpcut_threshold=8e-3, workers=0)

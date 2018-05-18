@@ -22,13 +22,15 @@ def pil_to_numpy(x_pil):
     # so we use np.rollaxis to get an array of shape (3, h, w)
     return np.rollaxis(np.asarray(x_pil) / 255.0, 2)
 
+
 def pil_to_tensor(x_pil):
     """
     :param x_pil: PIL.Image object
     :return: Normalized torch tensor of shape (channels, height, width)
     """
-    x_np =pil_to_numpy(x_pil)
+    x_np = pil_to_numpy(x_pil)
     return torch.from_numpy(x_np).float()
+
 
 def numpy_to_pil(x_np):
     """
@@ -42,6 +44,7 @@ def numpy_to_pil(x_np):
     x_np = np.rollaxis(x_np, 0, 3).astype(np.uint8)
     return Image.fromarray(x_np, mode='RGB')
 
+
 class PatchDataset(data.Dataset):
 
     def __init__(self, patches, use_cache, augment_data):
@@ -50,7 +53,8 @@ class PatchDataset(data.Dataset):
         self.crop = CenterCrop(config.CROP_SIZE)
 
         if augment_data:
-            self.random_transforms = [RandomRotation((90, 90)), RandomVerticalFlip(1.0), RandomHorizontalFlip(1.0), (lambda x: x)]
+            self.random_transforms = [RandomRotation((90, 90)), RandomVerticalFlip(1.0), RandomHorizontalFlip(1.0),
+                                      (lambda x: x)]
             self.get_aug_transform = (lambda: random.sample(self.random_transforms, 1)[0])
         else:
             # Transform does nothing. Not sure if horrible or very elegant...
@@ -73,17 +77,23 @@ class PatchDataset(data.Dataset):
     def __len__(self):
         return len(self.patches)
 
+
 class TestDataset(data.Dataset):
 
-    def __init__(self):
+    def __init__(self, tuples):
         super(TestDataset, self).__init__()
-        print('TestDataset class not implemented!')
+        self.tuples = tuples
+        self.crop = CenterCrop(config.CROP_SIZE)
 
     def __getitem__(self, index):
-        return None, None
+        frames = self.tuples[index]
+        x1, target, x2 = (pil_to_tensor(self.crop(data_manager.load_img(x))) for x in frames)
+        input = torch.cat((x1, x2), dim=0)
+        return input, target
 
     def __len__(self):
-        return 0
+        return len(self.tuples)
+
 
 def get_training_set():
     patches = data_manager.prepare_dataset()
@@ -92,5 +102,8 @@ def get_training_set():
     patches = patches[:config.MAX_TRAINING_SAMPLES]
     return PatchDataset(patches, config.CACHE_PATCHES, config.AUGMENT_DATA)
 
+
 def get_test_set():
-    return TestDataset()
+    davis_17 = data_manager._get_davis_17(config.DATASET_DIR)
+    tuples = data_manager._tuples_from_davis(davis_17, res='1080p')
+    return TestDataset(tuples[0:config.MAX_VALIDATION_SAMPLES])

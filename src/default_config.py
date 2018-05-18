@@ -29,6 +29,9 @@ BATCH_SIZE: int = 100
 # Upper limit on the number of samples used for training
 MAX_TRAINING_SAMPLES: int = 500_000
 
+#Upper limit on the number of samples used for validation
+MAX_VALIDATION_SAMPLES: int = 100
+
 # Number of workers of the torch.utils.data.DataLoader AND of the data manager
 # Set this to 0 to work on the main thread
 NUM_WORKERS: int = 0

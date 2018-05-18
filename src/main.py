@@ -4,6 +4,7 @@
 
 import torch
 import torch.nn as nn
+from src.interpolate import interpolate
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from os.path import exists, join as join_paths
@@ -79,14 +80,12 @@ def train(epoch):
     print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(training_data_loader)))
 
 def test():
-    error = 0.0
     with torch.no_grad():
         for batch in testing_data_loader:
             input, target = batch[0].to(device), batch[1].to(device)
             output = model(input)
-            # TODO: compute error
-            error = 0.0
-    print("===> Test error: {:.4f}".format(error))
+            loss = l1_loss(output, target)
+    print("===> Test loss: {:.4f}".format(loss.item()))
 
 def save_checkpoint(epoch):
     model_out_path = "model_epoch_{}.pth".format(epoch)
@@ -111,12 +110,3 @@ for epoch in range(1, config.EPOCHS + 1):
 tock_t = timer()
 
 print("Done. Took ~{}s".format(round(tock_t - tick_t)))
-
-#
-# In order to interpolate two frames and write the output as an image file:
-#
-# model.interpolate_f(
-#   '/path/to/frame_00001.jpg',
-#   '/path/to/frame_00003.jpg'
-# ).save('/path/to/frame_00002_star.jpg')
-#

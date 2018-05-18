@@ -52,10 +52,6 @@ class Net(nn.Module):
         else:
             self.separable_conv = SeparableConvolutionSlow()
 
-        # self.separable_conv = SeparableConvolution()
-        # self.separable_conv_slow = SeparableConvolutionSlow()
-        # self._check_gradients(self.separable_conv)
-
         print('_weight_init')
         self.apply(self._weight_init)
 
@@ -69,28 +65,22 @@ class Net(nn.Module):
         i1 = x[:, :3]
         i2 = x[:, 3:6]
 
-        #print('_start_pass')
         x = self.conv32(x)
         x = self.pool(x)
 
         x64 = self.conv64(x)
         x128 = self.pool(x64)
-        #print('_conv_64')
 
         x128 = self.conv128(x128)
         x256 = self.pool(x128)
-        #print('_conv_128')
 
         x256 = self.conv256(x256)
         x512 = self.pool(x256)
-        #print('_conv_256')
 
         x512 = self.conv512(x512)
         x = self.pool(x512)
-        #print('_conv_512')
 
         x = self.conv512x512(x)
-        #print('_conv_512x512')
 
         # -----------------------------------------------------------------------
 
@@ -98,55 +88,31 @@ class Net(nn.Module):
         x += x512
         x = self.upconv256(x)
 
-        #print('_up_conv256')
-
         x = self.upsamp256(x)
         x += x256
         x = self.upconv128(x)
 
-        #print('_up_conv128')
         x = self.upsamp128(x)
         x += x128
         x = self.upconv64(x)
 
         x = self.upsamp64(x)
         x += x64
-        #print('_up_conv64')
 
         # --------------------------------
 
         k2h = self.upconv51_1(x)
-        #print('_up_conv_51_1')
 
         k2v = self.upconv51_2(x)
-        #print('_up_conv_51_2')
 
         k1h = self.upconv51_3(x)
-        #print('_up_conv_51_3')
 
         k1v = self.upconv51_4(x)
-        #print('_up_conv_51_4')
 
         padded_i2 = self.pad(i2)
         padded_i1 = self.pad(i1)
 
-        # FIX/ME: DELETE!!
-        # return (k2h + k2v + k1h + k1v)[:, :3]
-
-        #print('Running sepconv (CUDA)...')
-        res = self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
-
-        #print('Running sepconv (slow)...')
-        #res_slow = self.separable_conv_slow(padded_i2, k2v, k2h) + self.separable_conv_slow(padded_i1, k1v, k1h)
-
-        #print('sepconv done')
-
-        #res_diff = (res - res_slow).abs().data.cpu().numpy() / np.maximum(1e-12, (res.abs() + res_slow.abs()).data.cpu().numpy())
-        #print('res_diff.max()', np.max(res_diff))
-        #print('res_diff.min()', np.min(res_diff))
-        #print('res_diff.avg()', np.mean(res_diff))
-
-        return res
+        return self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
 
     @staticmethod
     def _check_gradients(func):
