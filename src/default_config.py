@@ -48,6 +48,9 @@ ALWAYS_CPU: bool = False
 # Path to the outout directory where the model checkpoins should be stored
 OUTPUT_DIR: str = './out'
 
+# Path to the output directory of the runs for Tensorboard
+RUNS_DIR: str = './runs'
+
 # Whether or not the model parameters should be written to disk at each epoch
 SAVE_CHECKPOINS: bool = False
 

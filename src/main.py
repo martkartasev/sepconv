@@ -4,17 +4,16 @@
 
 import torch
 import torch.nn as nn
-from src.interpolate import interpolate
 from torch.utils.data import DataLoader
 import torch.optim as optim
+from tensorboardX import SummaryWriter
 from os.path import exists, join as join_paths
 from os import makedirs
 from timeit import default_timer as timer
 import src.config as config
 from src.model import Net, CustomLoss
 from src.dataset import get_training_set, get_test_set
-
-from torch.autograd import Variable
+from src.interpolate import interpolate
 
 
 # ----------------------------------------------------------------------
@@ -46,6 +45,7 @@ model = Net().to(device)
 l1_loss = nn.L1Loss()
 optimizer = optim.Adamax(model.parameters(), lr=0.001)
 
+board_writer = SummaryWriter(config.RUNS_DIR)
 
 # ----------------------------------------------------------------------
 
@@ -68,7 +68,6 @@ def train(epoch):
         output = model(input)
 
         loss = l1_loss(output, target)
-        epoch_loss += loss.item()
 
         print('Computing gradients...')
         loss.backward()
@@ -76,8 +75,15 @@ def train(epoch):
         print('Gradients ready.')
         optimizer.step()
 
-        print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss.item()))
-    print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(training_data_loader)))
+        loss_val = loss.item()
+        epoch_loss += loss_val
+
+        board_writer.add_scalar('data/iter_training_loss', loss_val, iteration)
+        print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss_val))
+
+    epoch_loss / len(training_data_loader)
+    board_writer.add_scalar('data/epoch_training_loss', epoch_loss, epoch)
+    print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss))
 
 def test():
     with torch.no_grad():
@@ -94,7 +100,8 @@ def save_checkpoint(epoch):
         makedirs(config.OUTPUT_DIR)
     torch.save(model.cpu().state_dict(), model_out_path)
     print("Checkpoint saved to {}".format(model_out_path))
-    model.cuda()
+    if device.type != 'cpu':
+        model.cuda()
 
 # ----------------------------------------------------------------------
 
@@ -110,3 +117,5 @@ for epoch in range(1, config.EPOCHS + 1):
 tock_t = timer()
 
 print("Done. Took ~{}s".format(round(tock_t - tick_t)))
+
+board_writer.close()

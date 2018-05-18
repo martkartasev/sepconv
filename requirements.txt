@@ -10,6 +10,7 @@ joblib
 # Torch
 torch >= 0.4.0
 torchvision
+tensorboardX
 
 # Required by the sepconv lib
 cffi
