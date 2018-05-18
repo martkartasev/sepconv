@@ -78,10 +78,10 @@ class PatchDataset(data.Dataset):
         return len(self.patches)
 
 
-class TestDataset(data.Dataset):
+class ValidationDataset(data.Dataset):
 
     def __init__(self, tuples):
-        super(TestDataset, self).__init__()
+        super(ValidationDataset, self).__init__()
         self.tuples = tuples
         self.crop = CenterCrop(config.CROP_SIZE)
 
@@ -103,7 +103,14 @@ def get_training_set():
     return PatchDataset(patches, config.CACHE_PATCHES, config.AUGMENT_DATA)
 
 
-def get_test_set():
+def get_validation_set():
     davis_17 = data_manager._get_davis_17(config.DATASET_DIR)
-    tuples = data_manager._tuples_from_davis(davis_17, res='1080p')
-    return TestDataset(tuples[0:config.MAX_VALIDATION_SAMPLES])
+    tuples = data_manager._tuples_from_davis(davis_17, res='480p')
+    return ValidationDataset(tuples[0:config.MAX_VALIDATION_SAMPLES])
+
+def get_visual_test_set():
+    davis_16 = data_manager._get_davis_16(config.DATASET_DIR)
+    tuples = data_manager._tuples_from_davis(davis_16, res='480p')
+    random.shuffle(tuples)
+    tuples = tuples[:10]
+    return tuples

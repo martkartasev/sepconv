@@ -48,17 +48,17 @@ ALWAYS_CPU: bool = False
 # Path to the outout directory where the model checkpoins should be stored
 OUTPUT_DIR: str = './out'
 
-# Path to the output directory of the runs for Tensorboard
-RUNS_DIR: str = './runs'
-
 # Whether or not the model parameters should be written to disk at each epoch
 SAVE_CHECKPOINS: bool = False
 
 # Force model to use the slow Separable Convolution implementation even if CUDA is available
 ALWAYS_SLOW_SEP_CONV: bool = False
 
-# Whether or not we should run the test set on the model at each epoch
-TEST_ENABLED: bool = False
+# Whether or not we should run the validation set on the model at each epoch
+VALIDATION_ENABLED: bool = False
+
+# Whether or not we should run the visual test set on the model at each epoch
+VISUAL_TEST_ENABLED: bool = False
 
 # Whether or not the data should be augmented with random transformations
 AUGMENT_DATA: bool = True
