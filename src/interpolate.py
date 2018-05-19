@@ -20,22 +20,22 @@ def _get_padding_modules(img_height, img_width):
     padding_width = left + img_width + right
     padding_height = top + img_height + bottom
 
-    if padding_width != ((padding_width >> 7) << 7):
-        padding_width = (((padding_width >> 7) + 1) << 7)
+    if padding_width % 128 != 0:
+        padding_width = (padding_width // 128 + 1) * 128
 
-    if padding_height != ((padding_height >> 7) << 7):
-        padding_height = (((padding_height >> 7) + 1) << 7)
+    if padding_height % 128 != 0:
+        padding_height = (padding_height // 128 + 1) * 128
 
     padding_width = padding_width - (left + img_width + right)
     padding_height = padding_height - (top + img_height + bottom)
 
-    input_padding_module = torch.nn.ReplicationPad2d([  left,  (right + padding_width),  top,  (bottom + padding_height)])
+    input_padding_module = torch.nn.ReplicationPad2d([left,  (right + padding_width),  top,  (bottom + padding_height)])
     output_padding_module = torch.nn.ReplicationPad2d([-left, -(right + padding_width), -top, -(bottom + padding_height)])
 
     return input_padding_module, output_padding_module
 
 
-def interpolate_batch(model, pil_frames):
+def interpolate_batch(model_, pil_frames):
 
     assert len(pil_frames) > 1, "Frames to be interpolated must be at least two"
 
@@ -58,14 +58,14 @@ def interpolate_batch(model, pil_frames):
         batch = batch.cuda()
         input_pad = input_pad.cuda()
         output_pad = output_pad.cuda()
-        model = model.cuda()
+        model_ = model_.cuda()
 
     # Apply input padding
     batch = input_pad(batch)
 
     # Run forward pass
     with torch.no_grad():
-        output = model(batch)
+        output = model_(batch)
 
     # Apply output padding
     output = output_pad(output)
@@ -76,14 +76,16 @@ def interpolate_batch(model, pil_frames):
     output_pils = [numpy_to_pil(x) for x in output]
     return output_pils
 
-def interpolate(model, frame1, frame2):
+
+def interpolate(model_, frame1, frame2):
     assert frame1.size == frame2.size, "Frames must be of the same size to be interpolated"
     frames = [frame1, frame2]
-    return interpolate_batch(model, frames)[0]
+    return interpolate_batch(model_, frames)[0]
 
-def interpolate_f(model, path1, path2):
+
+def interpolate_f(model_, path1, path2):
     frames = (Image.open(p).convert('RGB') for p in (path1, path2))
-    return interpolate(model, *frames)
+    return interpolate(model_, *frames)
 
 
 if __name__ == '__main__':
