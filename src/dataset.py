@@ -67,10 +67,18 @@ class PatchDataset(data.Dataset):
 
         print('Dataset ready with {} tuples.'.format(len(patches)))
 
+    @staticmethod
+    def random_temporal_order_swap(x1, x2):
+        if random.random() <= config.RANDOM_TEMPORAL_ORDER_SWAP_PROB:
+            return x2, x1
+        else:
+            return x1, x2
+
     def __getitem__(self, index):
         frames = self.load_patch(self.patches[index])
         aug_transform = self.get_aug_transform()
         x1, target, x2 = (pil_to_tensor(self.crop(aug_transform(x))) for x in frames)
+        x1, x2, = self.random_temporal_order_swap(x1, x2)
         input = torch.cat((x1, x2), dim=0)
         return input, target
 

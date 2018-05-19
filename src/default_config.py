@@ -62,3 +62,6 @@ VISUAL_TEST_ENABLED: bool = False
 
 # Whether or not the data should be augmented with random transformations
 AUGMENT_DATA: bool = True
+
+# Probability of performing the random temporal order swap of the two input frames
+RANDOM_TEMPORAL_ORDER_SWAP_PROB: float = 0.5
