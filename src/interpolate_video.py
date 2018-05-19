@@ -2,14 +2,34 @@
 # KTH Royal Institute of Technology
 #
 
-import imageio
 import argparse
 import torch
 import math
 import numpy as np
+import cv2 as cv
 from timeit import default_timer as timer
 from src.interpolate import interpolate_batch
 from src.extract_frames import extract_frames
+
+
+def _write_video(file_path, frames, fps):
+    """
+    Writes frames to an mp4 video file
+    :param file_path: Path to output video, must end with .mp4
+    :param frames: List of PIL.Image objects
+    :param fps: Desired frame rate
+    """
+
+    pil_to_numpy = lambda x: np.array(x)[:, :, ::-1]
+
+    w, h = frames[0].size
+    fourcc = cv.VideoWriter_fourcc('m', 'p', '4', 'v')
+    writer = cv.VideoWriter(file_path, fourcc, fps, (w, h))
+
+    for frame in frames:
+        writer.write(pil_to_numpy(frame))
+
+    writer.release()
 
 
 if __name__ == '__main__':
@@ -64,10 +84,9 @@ if __name__ == '__main__':
         middle = middle_frames[i]
         output_frames += [middle, frame2]
         print('Frame {}/{} done'.format(i+1, iters))
-    output_frames = [np.asarray(x) for x in output_frames]
 
     print('===> Saving video...')
-    imageio.mimwrite(params.dest, output_frames, fps=(input_fps * 2))
+    _write_video(params.dest, output_frames, fps=(input_fps * 2))
 
     tock_t = timer()
 
