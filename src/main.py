@@ -44,6 +44,10 @@ validation_data_loader = DataLoader(dataset=validation_set, num_workers=config.N
 
 print('===> Building model...')
 model = Net().to(device)
+if config.START_FROM_EXISTING_MODEL is not None:
+    print(f'===> Loading pre-trained model: {config.START_FROM_EXISTING_MODEL}')
+    state_dict = torch.load(config.START_FROM_EXISTING_MODEL)
+    model.load_state_dict(state_dict)
 l1_loss = nn.L1Loss()
 optimizer = optim.Adamax(model.parameters(), lr=0.001)
 

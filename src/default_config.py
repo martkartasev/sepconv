@@ -65,3 +65,6 @@ AUGMENT_DATA: bool = True
 
 # Probability of performing the random temporal order swap of the two input frames
 RANDOM_TEMPORAL_ORDER_SWAP_PROB: float = 0.5
+
+# Start from pre-trained model (path)
+START_FROM_EXISTING_MODEL = None
