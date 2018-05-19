@@ -67,8 +67,12 @@ def _get_davis_16(dataset_dir):
     return _get_davis(dataset_dir, "DAVIS", "https://graphics.ethz.ch/Downloads/Data/Davis/DAVIS-data.zip")
 
 
+def _get_davis_17_test(dataset_dir):
+    return _get_davis(dataset_dir, "DAVIS17-test", "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-test-dev-480p.zip")
+
+
 def _get_davis_17(dataset_dir):
-    return _get_davis(dataset_dir, "DAVIS17", "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-test-dev-480p.zip")
+    return _get_davis(dataset_dir, "DAVIS17", "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-trainval-480p.zip")
 
 
 def _get_davis(dataset_dir, folder, url):
@@ -368,8 +372,8 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
 
         return patches
 
-    davis_dir = _get_davis_16(dataset_dir)
-    tuples = _tuples_from_davis(davis_dir, res='1080p')
+    davis_dir = _get_davis_17(dataset_dir)
+    tuples = _tuples_from_davis(davis_dir, res='480p')
 
     patches = _extract_patches(
         tuples,

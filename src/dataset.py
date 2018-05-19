@@ -104,8 +104,8 @@ def get_training_set():
 
 
 def get_validation_set():
-    davis_17 = data_manager._get_davis_17(config.DATASET_DIR)
-    tuples = data_manager._tuples_from_davis(davis_17, res='480p')
+    davis_17_test = data_manager._get_davis_17_test(config.DATASET_DIR)
+    tuples = data_manager._tuples_from_davis(davis_17_test, res='480p')
     return ValidationDataset(tuples[0:config.MAX_VALIDATION_SAMPLES])
 
 def get_visual_test_set():
