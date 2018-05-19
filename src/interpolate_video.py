@@ -8,8 +8,8 @@ import torch
 import math
 import numpy as np
 from timeit import default_timer as timer
-from PIL import Image
 from src.interpolate import interpolate_batch
+from src.extract_frames import extract_frames
 
 
 if __name__ == '__main__':
@@ -31,14 +31,8 @@ if __name__ == '__main__':
     state_dict = torch.load(params.model)
     model.load_state_dict(state_dict)
 
-    def convert_frame(arg):
-        return Image.fromarray(arg[:, :, :3], mode='RGB')
-
     print('===> Reading video...')
-    video_reader = imageio.get_reader(params.src)
-    input_fps = video_reader.get_meta_data()['fps']
-
-    input_frames = [convert_frame(x) for x in video_reader]
+    input_frames, input_fps = extract_frames(params.src)
 
     if params.inputlimit is not None:
         input_frames = input_frames[:params.inputlimit]
