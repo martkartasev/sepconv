@@ -144,6 +144,30 @@ def _tuples_from_davis(davis_dir, res='480p'):
     return tuples
 
 
+def get_selected_davis(dataset_dir=None, res='480p'):
+
+    if dataset_dir is None:
+        dataset_dir = config.DATASET_DIR
+
+    davis16_dir = _get_davis_16(dataset_dir)
+    root = join(davis16_dir, 'JPEGImages', res)
+
+    tuples = [
+        ('horsejump-low/00030.jpg', 'horsejump-low/00031.jpg', 'horsejump-low/00032.jpg'),
+        ('parkour/00069.jpg', 'parkour/00070.jpg', 'parkour/00071.jpg'),
+        ('breakdance/00060.jpg', 'breakdance/00061.jpg', 'breakdance/00062.jpg'),
+        ('drift-turn/00045.jpg', 'drift-turn/00046.jpg', 'drift-turn/00047.jpg'),
+        ('rhino/00027.jpg', 'rhino/00028.jpg', 'rhino/00029.jpg'),
+        ('motocross-jump/00009.jpg', 'motocross-jump/00010.jpg', 'motocross-jump/00011.jpg'),
+        ('flamingo/00006.jpg', 'flamingo/00007.jpg', 'flamingo/00008.jpg'),
+        ('scooter-black/00027.jpg', 'scooter-black/00028.jpg', 'scooter-black/00029.jpg'),
+        ('boat/00006.jpg', 'boat/00007.jpg', 'boat/00008.jpg'),
+        ('dance-twirl/00054.jpg', 'dance-twirl/00055.jpg', 'dance-twirl/00056.jpg')
+    ]
+
+    return [tuple(join(root, y) for y in x) for x in tuples]
+
+
 ########################################## PATCH EXTRACTION #########################################
 
 def simple_flow(frame1, frame2):

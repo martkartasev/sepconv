@@ -117,8 +117,4 @@ def get_validation_set():
     return ValidationDataset(tuples[0:config.MAX_VALIDATION_SAMPLES])
 
 def get_visual_test_set():
-    davis_16 = data_manager._get_davis_16(config.DATASET_DIR)
-    tuples = data_manager._tuples_from_davis(davis_16, res='480p')
-    random.shuffle(tuples)
-    tuples = tuples[:10]
-    return tuples
+    return data_manager.get_selected_davis(res='480p')
