@@ -6,6 +6,7 @@ Pillow
 imageio == 2.3.0
 six
 joblib
+tqdm
 
 # Torch
 torch >= 0.4.0
