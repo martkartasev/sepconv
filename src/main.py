@@ -2,6 +2,7 @@
 # KTH Royal Institute of Technology
 #
 
+import inspect
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -60,6 +61,9 @@ else:
 optimizer = optim.Adamax(model.parameters(), lr=0.001)
 
 board_writer = SummaryWriter()
+
+config_str = str(inspect.getmembers(config)[:21])
+board_writer.add_text('config', config_str)
 
 # ----------------------------------------------------------------------
 
