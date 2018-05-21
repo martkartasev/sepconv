@@ -8,13 +8,16 @@ six
 joblib
 tqdm
 
-# Torch
+# PyTorch
 torch >= 0.4.0
 torchvision
-tensorboardX
 
-# Required by the sepconv lib
+# Required to build PyTorch extensions
 cffi
+
+# Tensorboard
+tensorflow
+tensorboardX
 
 # OpenCV
 opencv-python
