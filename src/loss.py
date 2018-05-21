@@ -1,6 +1,6 @@
 # The VGG loss in this file is copied from
 # https://github.com/ekgibbons/pytorch-sepconv/blob/master/python/_support/VggLoss.py
-# The SsimLoss loss in this file is copied from
+# The SsimLoss loss in this file is copied (with minor modifications) from
 # https://github.com/Po-Hsun-Su/pytorch-ssim/blob/master/pytorch_ssim/__init__.py
 
 from math import exp
@@ -58,7 +58,7 @@ class SsimLoss(torch.nn.Module):
             self.window = window
             self.channel = channel
 
-        return _ssim(img1, img2, window, self.window_size, channel, self.size_average)
+        return -_ssim(img1, img2, window, self.window_size, channel, self.size_average)
 
 
 def ssim(img1, img2, window_size=11, size_average=True):
