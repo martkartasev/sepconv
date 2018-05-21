@@ -2,7 +2,6 @@
 # KTH Royal Institute of Technology
 #
 
-import inspect
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -65,14 +64,11 @@ optimizer = optim.Adamax(model.parameters(), lr=0.001)
 
 board_writer = SummaryWriter()
 
-config_str = str(inspect.getmembers(config)[:21])
-board_writer.add_text('data/config', config_str, 0)
-board_writer.add_text('data/test', 'Hello, World', 0)
-
 # ----------------------------------------------------------------------
 
 def train(epoch):
     print("===> Training...")
+    before_pass = [p.data.clone() for p in model.parameters()]
     epoch_loss = 0
     for iteration, batch in enumerate(training_data_loader, 1):
         input, target = batch[0].to(device), batch[1].to(device)
@@ -96,6 +92,16 @@ def train(epoch):
         board_writer.add_scalar('data/iter_training_loss', loss_val, iteration)
         print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss_val))
 
+    weight_l2s = 0
+    weight_diff_l2s = 0
+    gradient_l2s = 0
+    for i, p in enumerate(model.parameters()):
+        weight_l2s += p.data.norm(2)
+        weight_diff_l2s += (p.data - before_pass[i]).norm(2)
+        gradient_l2s += p.grad.norm(2)
+    board_writer.add_scalar('data/epoch_weight_l2', weight_l2s, epoch)
+    board_writer.add_scalar('data/epoch_weight_change_l2', weight_diff_l2s, epoch)
+    board_writer.add_scalar('data/epoch_gradient_l2', gradient_l2s, epoch)
     epoch_loss /= len(training_data_loader)
     board_writer.add_scalar('data/epoch_training_loss', epoch_loss, epoch)
     print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss))
