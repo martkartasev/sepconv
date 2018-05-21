@@ -38,6 +38,26 @@ def is_image(file_path):
     return any(file_path.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
 
 
+def load_tuples(root_path, stride, tuple_size):
+    """
+    Reads the content of a directory coupling the files together.
+    :param root_path: Path to the directory
+    :param stride: Number of steps from one tuple to the next
+    :param tuple_size: Size of each tuple of paths
+    :return: List of tuples containing the paths to the files
+    """
+
+    frame_paths = [join(root_path, x) for x in listdir(root_path)]
+    frame_paths = [x for x in frame_paths if is_image(x)]
+    frame_paths.sort()
+
+    tuples = []
+    for i in range(1 + (len(frame_paths) - tuple_size) // stride):
+        tuples.append(tuple(frame_paths[i * stride + j] for j in range(tuple_size)))
+
+    return tuples
+
+
 def load_patch(patch):
     """
     Reads the three images of a patch from disk and returns them already cropped.
