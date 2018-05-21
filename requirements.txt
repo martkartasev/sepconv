@@ -17,7 +17,7 @@ cffi
 
 # Tensorboard
 tensorflow
-tensorboardX
+git+https://github.com/lanpa/tensorboard-pytorch@f76e92be99cb4415c03f474d77ab09915bce6d55
 
 # OpenCV
 opencv-python
