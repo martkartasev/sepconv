@@ -58,7 +58,7 @@ elif config.LOSS == "vgg":
 elif config.LOSS == "ssim":
     loss_function = loss.SsimLoss()
 elif config.LOSS == "l1+vgg":
-    loss_function = loss.CombinedLoss(vgg_coeff=5e-5)
+    loss_function = loss.CombinedLoss()
 else:
     raise ValueError(f"Unknown loss: {config.LOSS}")
 
