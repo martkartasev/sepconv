@@ -11,8 +11,9 @@ from os.path import exists, join as join_paths
 from os import makedirs
 from timeit import default_timer as timer
 import src.config as config
+from src import loss
 from src.data_manager import load_img
-from src.model import Net, CustomLoss
+from src.model import Net
 from src.dataset import get_training_set, get_validation_set, get_visual_test_set, pil_to_tensor
 from src.interpolate import interpolate
 
@@ -48,7 +49,14 @@ if config.START_FROM_EXISTING_MODEL is not None:
     print(f'===> Loading pre-trained model: {config.START_FROM_EXISTING_MODEL}')
     state_dict = torch.load(config.START_FROM_EXISTING_MODEL)
     model.load_state_dict(state_dict)
-l1_loss = nn.L1Loss()
+if config.LOSS == "l1":
+    loss_function = nn.L1Loss()
+elif config.LOSS == "vgg":
+    loss_function = loss.VggLoss()
+elif config.LOSS == "ssim":
+    loss_function = loss.SsimLoss()
+else:
+    raise ValueError(f"Unknown loss: {config.LOSS}")
 optimizer = optim.Adamax(model.parameters(), lr=0.001)
 
 board_writer = SummaryWriter()
@@ -66,15 +74,15 @@ def train(epoch):
         print('Forward pass...')
         output = model(input)
 
-        loss = l1_loss(output, target)
+        loss_ = loss_function(output, target)
 
         print('Computing gradients...')
-        loss.backward()
+        loss_.backward()
 
         print('Gradients ready.')
         optimizer.step()
 
-        loss_val = loss.item()
+        loss_val = loss_.item()
         epoch_loss += loss_val
 
         board_writer.add_scalar('data/iter_training_loss', loss_val, iteration)
@@ -103,7 +111,7 @@ def validate(epoch):
         for batch in validation_data_loader:
             input, target = batch[0].to(device), batch[1].to(device)
             output = model(input)
-            loss = l1_loss(output, target)
+            loss = loss_function(output, target)
             valid_loss += loss.item()
     valid_loss /= len(validation_data_loader)
     board_writer.add_scalar('data/epoch_validation_loss', valid_loss, epoch)

@@ -154,15 +154,3 @@ class Net(nn.Module):
     def _weight_init(m):
         if isinstance(m, nn.Conv2d):
             init.orthogonal_(m.weight, init.calculate_gain('relu'))
-
-
-class CustomLoss(_Loss):
-
-    def __init__(self, size_average=True):
-        super(CustomLoss, self).__init__(size_average)
-
-    def forward(self, input, target):
-        _assert_no_grad(target)
-        # ...
-        # Return the loss as a Tensor
-        return None

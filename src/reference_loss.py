@@ -12,7 +12,7 @@ def main():
         p1, p2, p3, = [dataset.pil_to_numpy(data_manager.load_img(p)) for p in (p1, p2, p3)]
         p2_predicted = np.mean([p1, p3], axis=0)
         l1_loss += np.mean(np.abs(p2 - p2_predicted))
-    print(f"Linear interpolation: {l1_loss / len(validation_set.tuples)}")
+    print(f"Linear interpolation: {loss_function / len(validation_set.tuples)}")
 
 
 if __name__ == "__main__":

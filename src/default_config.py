@@ -68,3 +68,6 @@ RANDOM_TEMPORAL_ORDER_SWAP_PROB: float = 0.5
 
 # Start from pre-trained model (path)
 START_FROM_EXISTING_MODEL = None
+
+# One of {"l1", "vgg", "ssim"}
+LOSS: str = "l1"
