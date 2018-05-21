@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 from tensorboardX import SummaryWriter
 from os.path import exists, join as join_paths
-from os import makedirs
+from os import makedirs, link, remove
 from timeit import default_timer as timer
 import src.config as config
 from src import loss
@@ -104,9 +104,13 @@ def train(epoch):
 def save_checkpoint(epoch):
     model_out_path = "model_epoch_{}.pth".format(epoch)
     model_out_path = join_paths(config.OUTPUT_DIR, model_out_path)
+    model_latest_path = join_paths(config.OUTPUT_DIR, 'model_epoch_latest.pth')
     if not exists(config.OUTPUT_DIR):
         makedirs(config.OUTPUT_DIR)
     torch.save(model.cpu().state_dict(), model_out_path)
+    if exists(model_latest_path):
+        remove(model_latest_path)
+    link(model_out_path, model_latest_path)
     print("Checkpoint saved to {}".format(model_out_path))
     if device.type != 'cpu':
         model.cuda()
