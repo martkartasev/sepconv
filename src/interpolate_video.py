@@ -7,7 +7,8 @@ import torch
 import math
 import numpy as np
 import cv2 as cv
-from os.path import exists, join, basename, isdir
+from torchvision.transforms import CenterCrop
+from os.path import join, isdir
 from timeit import default_timer as timer
 from src.data_manager import load_tuples
 from src.interpolate import interpolate_batch
@@ -57,7 +58,8 @@ if __name__ == '__main__':
     if isdir(params.src):
         print('===> Reading frames...')
         input_fps = params.inputfps
-        input_frames = load_tuples(params.src, 1, 2)
+        input_frames = load_tuples(params.src, 1, 1, paths_only=False)
+        input_frames = [x[0] for x in input_frames]
     else:
         print('===> Reading video...')
         input_frames, input_fps = extract_frames(params.src)
@@ -65,6 +67,12 @@ if __name__ == '__main__':
     if params.inputlimit is not None:
         input_frames = input_frames[:params.inputlimit]
     n_input_frames = len(input_frames)
+
+    if not torch.cuda.is_available():
+        crop_size = min(input_frames[0].size)
+        crop = CenterCrop(crop_size)
+        print(f'===> CUDA not available. Cropping input as {crop_size}x{crop_size}...')
+        input_frames = [crop(x) for x in input_frames]
 
     batch_size = n_input_frames
     if params.batchsize is not None and params.batchsize > 1:

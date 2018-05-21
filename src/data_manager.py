@@ -38,22 +38,26 @@ def is_image(file_path):
     return any(file_path.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
 
 
-def load_tuples(root_path, stride, tuple_size):
+def load_tuples(root_path, stride, tuple_size, paths_only=True):
     """
-    Reads the content of a directory coupling the files together.
+    Reads the content of a directory coupling the files together in tuples.
     :param root_path: Path to the directory
     :param stride: Number of steps from one tuple to the next
-    :param tuple_size: Size of each tuple of paths
-    :return: List of tuples containing the paths to the files
+    :param tuple_size: Size of each tuple
+    :param paths_only: If true, the tuples will contain paths rather than PIL.Image objects
+    :return: List of tuples containing the images or their paths
     """
 
-    frame_paths = [join(root_path, x) for x in listdir(root_path)]
-    frame_paths = [x for x in frame_paths if is_image(x)]
-    frame_paths.sort()
+    frames = [join(root_path, x) for x in listdir(root_path)]
+    frames = [x for x in frames if is_image(x)]
+    frames.sort()
+
+    if not paths_only:
+        frames = [load_img(x) for x in frames]
 
     tuples = []
-    for i in range(1 + (len(frame_paths) - tuple_size) // stride):
-        tuples.append(tuple(frame_paths[i * stride + j] for j in range(tuple_size)))
+    for i in range(1 + (len(frames) - tuple_size) // stride):
+        tuples.append(tuple(frames[i * stride + j] for j in range(tuple_size)))
 
     return tuples
 
