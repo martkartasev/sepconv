@@ -63,7 +63,8 @@ optimizer = optim.Adamax(model.parameters(), lr=0.001)
 board_writer = SummaryWriter()
 
 config_str = str(inspect.getmembers(config)[:21])
-board_writer.add_text('config', config_str)
+board_writer.add_text('data/config', config_str, 0)
+board_writer.add_text('data/test', 'Hello, World', 0)
 
 # ----------------------------------------------------------------------
 
