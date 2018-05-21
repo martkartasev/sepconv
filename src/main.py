@@ -17,6 +17,7 @@ from src.data_manager import load_img
 from src.model import Net
 from src.dataset import get_training_set, get_validation_set, get_visual_test_set, pil_to_tensor
 from src.interpolate import interpolate
+from src.utilities import psnr
 
 # ----------------------------------------------------------------------
 
@@ -50,6 +51,7 @@ if config.START_FROM_EXISTING_MODEL is not None:
     print(f'===> Loading pre-trained model: {config.START_FROM_EXISTING_MODEL}')
     state_dict = torch.load(config.START_FROM_EXISTING_MODEL)
     model.load_state_dict(state_dict)
+
 if config.LOSS == "l1":
     loss_function = nn.L1Loss()
 elif config.LOSS == "vgg":
@@ -58,6 +60,7 @@ elif config.LOSS == "ssim":
     loss_function = loss.SsimLoss()
 else:
     raise ValueError(f"Unknown loss: {config.LOSS}")
+
 optimizer = optim.Adamax(model.parameters(), lr=0.001)
 
 board_writer = SummaryWriter()
@@ -111,15 +114,22 @@ def save_checkpoint(epoch):
 
 def validate(epoch):
     print("===> Running validation...")
-    valid_loss = 0
+    ssmi = loss.SsimLoss()
+    valid_loss, valid_ssmi, valid_psnr = 0, 0, 0
+    iters = len(validation_data_loader)
     with torch.no_grad():
         for batch in validation_data_loader:
             input, target = batch[0].to(device), batch[1].to(device)
             output = model(input)
-            loss = loss_function(output, target)
-            valid_loss += loss.item()
-    valid_loss /= len(validation_data_loader)
+            valid_loss += loss_function(output, target).item()
+            valid_ssmi -= ssmi(output, target).item()
+            valid_psnr += psnr(output, target).item()
+    valid_loss /= iters
+    valid_ssmi /= iters
+    valid_psnr /= iters
     board_writer.add_scalar('data/epoch_validation_loss', valid_loss, epoch)
+    board_writer.add_scalar('data/epoch_ssmi', valid_ssmi, epoch)
+    board_writer.add_scalar('data/epoch_psnr', valid_psnr, epoch)
     print("===> Validation loss: {:.4f}".format(valid_loss))
 
 
