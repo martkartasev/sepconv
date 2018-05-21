@@ -8,6 +8,7 @@ from math import exp
 import torch
 import torch.nn.functional as F
 import torchvision
+import src.config as config
 from torch import nn
 from torch.autograd import Variable
 
@@ -32,7 +33,7 @@ class VggLoss(nn.Module):
 
         loss = torch.norm(outputFeatures - targetFeatures, 2)
 
-        return loss
+        return config.VGG_FACTOR*loss
 
 
 class CombinedLoss(nn.Module):
