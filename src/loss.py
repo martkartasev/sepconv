@@ -35,6 +35,17 @@ class VggLoss(nn.Module):
         return loss
 
 
+class CombinedLoss(nn.Module):
+    def __init__(self, vgg_coeff):
+        super(CombinedLoss, self).__init__()
+        self.vgg = VggLoss()
+        self.l1 = nn.L1Loss()
+        self.vgg_coeff = vgg_coeff
+
+    def forward(self, output, target) -> torch.Tensor:
+        return self.vgg_coeff * self.vgg(output, target) + self.l1(output, target)
+
+
 class SsimLoss(torch.nn.Module):
     def __init__(self, window_size=11, size_average=True):
         super(SsimLoss, self).__init__()
