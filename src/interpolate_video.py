@@ -56,6 +56,8 @@ if __name__ == '__main__':
     model.load_state_dict(state_dict)
 
     if isdir(params.src):
+        if params.inputfps is None:
+            raise Exception('Argument --inputfps is required if the source is a folder of frames')
         print('===> Reading frames...')
         input_fps = params.inputfps
         input_frames = load_tuples(params.src, 1, 1, paths_only=False)
