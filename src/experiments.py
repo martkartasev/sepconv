@@ -118,3 +118,6 @@ def test_all():
 
     print('===> Testing Wiz (quantitative)...')
     test_wiz(best_model_quantitative, output_folder='/project/exp/wiz_quant/')
+
+if __name__ == '__main__':
+    test_all()
