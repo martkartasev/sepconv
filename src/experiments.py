@@ -106,6 +106,8 @@ def test_all():
     print('===> Testing latest pure L1...')
     test_on_validation_set(pure_l1)
 
+    print('===> Testing linear interp...')
+    test_linear_interp()
 
     print('===> Loading best models...')
     best_model_qualitative = load_model('./trained_model/best_model_qualitative.pth')
