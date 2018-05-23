@@ -61,7 +61,7 @@ def test_on_validation_set(model, validation_set=None):
     total_psnr = 0
     iters = len(validation_set.tuples)
 
-    for tup in validation_set.tuples:
+    for i, tup in enumerate(validation_set.tuples):
         x1, gt, x2, = [load_img(p) for p in tup]
         pred = interpolate(model, x1, x2)
         gt = pil_to_tensor(gt)
