@@ -22,10 +22,16 @@ def test_metrics(model, video_path=None, frames=None, output_folder=None):
 
     total_ssim = 0
     total_psnr = 0
-    iters = 1 + (len(frames) - 3) // 2
+    stride = 10
+    iters = 1 + (len(frames) - 3) // stride
 
+    triplets = []
     for i in range(iters):
-        x1, gt, x2 = frames[i*2], frames[i*2 + 1], frames[i*2 + 2]
+        tup = (frames[i*stride], frames[i*stride + 1], frames[i*stride + 2])
+        triplets.append(tup)
+
+    for i in range(len(triplets)):
+        x1, gt, x2 = triplets[i]
         pred = interpolate(model, x1, x2)
         if output_folder is not None:
             frame_path = join(output_folder, f'wiz_{i}.jpg')
