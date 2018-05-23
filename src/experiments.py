@@ -22,7 +22,7 @@ def test_metrics(model, video_path=None, frames=None, output_folder=None):
 
     total_ssim = 0
     total_psnr = 0
-    stride = 10
+    stride = 30
     iters = 1 + (len(frames) - 3) // stride
 
     triplets = []
@@ -30,7 +30,9 @@ def test_metrics(model, video_path=None, frames=None, output_folder=None):
         tup = (frames[i*stride], frames[i*stride + 1], frames[i*stride + 2])
         triplets.append(tup)
 
-    for i in range(len(triplets)):
+    iters = len(triplets)
+
+    for i in range(iters):
         x1, gt, x2 = triplets[i]
         pred = interpolate(model, x1, x2)
         if output_folder is not None:
@@ -40,7 +42,7 @@ def test_metrics(model, video_path=None, frames=None, output_folder=None):
         pred = pil_to_tensor(pred)
         total_ssim += ssim(pred, gt).item()
         total_psnr += psnr(pred, gt).item()
-        print(f'#{i+1} done')
+        print(f'#{i+1}/{iters} done')
 
     avg_ssim = total_ssim / iters
     avg_psnr = total_psnr / iters
@@ -56,7 +58,7 @@ def load_model(path):
 
 
 def test_wiz(model, output_folder=None):
-    video_path = '/project/videos/see_you_again_540.mp4'
+    video_path = '/Users/carlo/Documents/Stockholm/KTH/Courses/DL/Project/Tests/Originals/see_you_again_540.mp4'#'/project/videos/see_you_again_540.mp4'
     test_metrics(model, video_path=video_path, output_folder=output_folder)
 
 
@@ -112,14 +114,15 @@ def test_linear_interp(validation_set=None):
 def test_all():
 
     print('===> Loading pure L1...')
-    pure_l1 = load_model('./trained_models/last_pure_l1.pth')
+    # pure_l1 = load_model('./trained_models/last_pure_l1.pth')
 
     print('===> Testing latest pure L1...')
     # test_on_validation_set(pure_l1)
     print('avg_ssim: 0.8197908288240433, avg_psnr: 29.126618137359618')
 
     print('===> Testing linear interp...')
-    test_linear_interp()
+    # test_linear_interp()
+    print('avg_ssim: 0.6868560968339443, avg_psnr: 26.697076902389526')
 
     print('===> Loading best models...')
     best_model_qualitative = load_model('./trained_models/best_model_qualitative.pth')
