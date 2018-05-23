@@ -3,6 +3,7 @@
 #
 
 import torch
+from torchvision.transforms import CenterCrop
 from os.path import join
 from src.model import Net
 from src.interpolate import interpolate
@@ -11,6 +12,7 @@ from src.data_manager import load_img
 from src.dataset import pil_to_tensor, get_validation_set
 from src.utilities import psnr
 from src.loss import ssim
+import src.config as config
 
 
 def test_metrics(model, video_path=None, frames=None, output_folder=None):
@@ -61,8 +63,10 @@ def test_on_validation_set(model, validation_set=None):
     total_psnr = 0
     iters = len(validation_set.tuples)
 
+    crop = CenterCrop(config.CROP_SIZE)
+
     for i, tup in enumerate(validation_set.tuples):
-        x1, gt, x2, = [load_img(p) for p in tup]
+        x1, gt, x2, = [crop(load_img(p)) for p in tup]
         pred = interpolate(model, x1, x2)
         gt = pil_to_tensor(gt)
         pred = pil_to_tensor(pred)
@@ -85,8 +89,10 @@ def test_linear_interp(validation_set=None):
     total_psnr = 0
     iters = len(validation_set.tuples)
 
+    crop = CenterCrop(config.CROP_SIZE)
+
     for tup in validation_set.tuples:
-        x1, gt, x2, = [pil_to_tensor(load_img(p)) for p in tup]
+        x1, gt, x2, = [pil_to_tensor(crop(load_img(p))) for p in tup]
         gt = pil_to_tensor(gt)
         pred = torch.mean(torch.stack((x1, x2), dim=0), dim=0)
         total_ssim += ssim(pred, gt).item()
