@@ -101,7 +101,7 @@ def test_linear_interp(validation_set=None):
 def test_all():
 
     print('===> Loading pure L1...')
-    pure_l1 = load_model('./trained_model/last_pure_l1.pth')
+    pure_l1 = load_model('./trained_models/last_pure_l1.pth')
 
     print('===> Testing latest pure L1...')
     test_on_validation_set(pure_l1)
@@ -110,8 +110,8 @@ def test_all():
     test_linear_interp()
 
     print('===> Loading best models...')
-    best_model_qualitative = load_model('./trained_model/best_model_qualitative.pth')
-    best_model_quantitative = load_model('./trained_model/best_model_quantitative.pth')
+    best_model_qualitative = load_model('./trained_models/best_model_qualitative.pth')
+    best_model_quantitative = load_model('./trained_models/best_model_quantitative.pth')
 
     print('===> Testing Wiz (qualitative)...')
     test_wiz(best_model_qualitative, output_folder='/project/exp/wiz_qual/')
