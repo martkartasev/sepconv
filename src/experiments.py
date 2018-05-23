@@ -58,7 +58,7 @@ def load_model(path):
 
 
 def test_wiz(model, output_folder=None):
-    video_path = '/Users/carlo/Documents/Stockholm/KTH/Courses/DL/Project/Tests/Originals/see_you_again_540.mp4'#'/project/videos/see_you_again_540.mp4'
+    video_path = '/project/videos/see_you_again_540.mp4'
     test_metrics(model, video_path=video_path, output_folder=output_folder)
 
 
