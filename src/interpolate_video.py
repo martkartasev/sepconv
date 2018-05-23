@@ -84,6 +84,7 @@ if __name__ == '__main__':
     n_batches = int(math.ceil(1.0 * n_input_frames / (batch_size - 1)))
     if (batch_size-1)*(n_batches-1) >= n_input_frames - 1:
         n_batches -= 1
+    print(f'Job split into {n_batches} batches')
 
     print('===> Interpolating...')
     middle_frames = []
