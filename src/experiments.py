@@ -125,11 +125,12 @@ def test_all():
     print('avg_ssim: 0.6868560968339443, avg_psnr: 26.697076902389526')
 
     print('===> Loading best models...')
-    best_model_qualitative = load_model('./trained_models/best_model_qualitative.pth')
+    # best_model_qualitative = load_model('./trained_models/best_model_qualitative.pth')
     best_model_quantitative = load_model('./trained_models/best_model_quantitative.pth')
 
     print('===> Testing Wiz (qualitative)...')
-    test_wiz(best_model_qualitative, output_folder='/project/exp/wiz_qual/')
+    # test_wiz(best_model_qualitative, output_folder='/project/exp/wiz_qual/')
+    print('avg_ssim: 0.9658980375842044, avg_psnr: 37.27564642554835')
 
     print('===> Testing Wiz (quantitative)...')
     test_wiz(best_model_quantitative, output_folder='/project/exp/wiz_quant/')
