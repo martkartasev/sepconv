@@ -73,6 +73,11 @@ class SsimLoss(torch.nn.Module):
 
 
 def ssim(img1, img2, window_size=11, size_average=True):
+
+    if len(img1.size()) == 3:
+        img1 = torch.stack([img1], dim=0)
+        img2 = torch.stack([img2], dim=0)
+
     (_, channel, _, _) = img1.size()
     window = create_window(window_size, channel)
 
