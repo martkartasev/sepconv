@@ -1,30 +1,69 @@
 # Video Frame Interpolation
 
+## Installation
 
+### Install pip3:
+```
+sudo apt-get install python3-setuptools
+sudo easy_install3 pip
+```
+
+### Install GCC & friends:
+```
+sudo apt-get install gcc libdpkg-perl python3-dev
+```
+
+### Install FFmpeg:
+```
+sudo apt-get install ffmpeg
+```
+
+### Install CUDA:
+```
+curl -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+sudo dpkg -i ./cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+sudo apt-get update
+sudo apt-get install cuda-8-0 -y
+```
+
+### Install NVCC:
+```
+sudo apt-get install nvidia-cuda-toolkit
+```
+
+### Install dependencies:
+```
+sudo pip3 install -r ./path/to/requirements.txt
+```
+
+-------
+## How to setup the project and train the network:
+
+### Move to the project directory:
+```
+cd ./DeepLearningFrameInterpolation
+```
+
+### Create a new configuration file:
+```
+echo -e "from src.default_config import *\r\n\r\n# ...custom constants here" > ./src/config.py
+```
+
+### To train the network, run `main.py` as a module:
+```
+python3 -m src.main
+```
+
+-------
 ## License
 
 This project is released under the MIT license. See `LICENSE` for more information.
-
 
 ## Third-party Libraries
 
 The following dependencies are bundled with this project, but are under terms of a separate license:
 * [pytorch-sepconv](https://github.com/sniklaus/pytorch-sepconv) by [sniklaus](https://github.com/sniklaus)
-* [CUDA Gradient for sepconv] (https://github.com/ekgibbons/pytorch-sepconv)
-## Installation
-
-Clone this directory on your local machine:
-git clone https://url.to.remote.repository
-
-Move to the project directory:
-cd ./DeepLearningFrameInterpolation
-
-Create a new configuration file:
-echo -e "from src.default_config import *\r\n\r\n# ...custom constants here" > ./src/config.py
-
-To train the network, run main.py as a module:
-python3 -m src.main
-
+* [CUDA Gradient for sepconv](https://github.com/ekgibbons/pytorch-sepconv)
 
 ## References
 
