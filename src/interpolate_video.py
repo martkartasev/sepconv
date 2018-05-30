@@ -35,18 +35,9 @@ def _write_video(file_path, frames, fps):
     writer.release()
 
 
-if __name__ == '__main__':
+def interpolate_video(params):
 
     from src.model import Net
-
-    parser = argparse.ArgumentParser(description='Video Frame Interpolation')
-    parser.add_argument('--src', type=str, required=True, help='path to the video, either as a single file or as a folder')
-    parser.add_argument('--dest', type=str, required=True, help='output path of the resulting video, either as a single file or as a folder')
-    parser.add_argument('--model', type=str, required=True, help='path of the trained model')
-    parser.add_argument('--inputfps', type=int, required=False, default=None, help='frame-rate of the input. Only used if the frames are read from a folder')
-    parser.add_argument('--inputlimit', type=int, required=False, default=None, help='maximum number of processed input frames')
-    parser.add_argument('--batchsize', type=int, required=False, default=None, help='number of frames to be processed at the same time (i.e. number of interpolations in parallel +1)')
-    params = parser.parse_args()
 
     tick_t = timer()
 
@@ -65,6 +56,11 @@ if __name__ == '__main__':
     else:
         print('===> Reading video...')
         input_frames, input_fps = extract_frames(params.src)
+        if input_fps is None:
+            if params.inputfps is None:
+                raise Exception('Argument --inputfps is required for this type of source')
+            else:
+                input_fps = params.inputfps
 
     if params.inputlimit is not None:
         input_frames = input_frames[:params.inputlimit]
@@ -117,3 +113,17 @@ if __name__ == '__main__':
     tock_t = timer()
 
     print("Done. Took ~{}s".format(round(tock_t - tick_t)))
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Video Frame Interpolation')
+    parser.add_argument('--src', type=str, required=True, help='path to the video, either as a single file or as a folder')
+    parser.add_argument('--dest', type=str, required=True, help='output path of the resulting video, either as a single file or as a folder')
+    parser.add_argument('--model', type=str, required=True, help='path of the trained model')
+    parser.add_argument('--inputfps', type=int, required=False, default=None, help='frame-rate of the input. Only used if the frames are read from a folder')
+    parser.add_argument('--inputlimit', type=int, required=False, default=None, help='maximum number of processed input frames')
+    parser.add_argument('--batchsize', type=int, required=False, default=None, help='number of frames to be processed at the same time (i.e. number of interpolations in parallel +1)')
+
+    _params = parser.parse_args()
+    interpolate_video(_params)

@@ -15,7 +15,7 @@ def extract_frames(video_path):
         return Image.fromarray(arg[:, :, :3], mode='RGB')
 
     video_reader = imageio.get_reader(video_path)
-    fps = video_reader.get_meta_data()['fps']
+    fps = video_reader.get_meta_data().get('fps', None)
     frames = [convert_frame(x) for x in video_reader]
 
     return frames, fps
