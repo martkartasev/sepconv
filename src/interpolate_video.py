@@ -5,37 +5,16 @@
 import argparse
 import torch
 import math
-import numpy as np
-import cv2 as cv
 from torchvision.transforms import CenterCrop
 from os.path import join, isdir
 from timeit import default_timer as timer
-from src.data_manager import load_tuples
+from src.utilities import write_video
 from src.interpolate import interpolate_batch
+from src.data_manager import load_tuples
 from src.extract_frames import extract_frames
 
 
-def _write_video(file_path, frames, fps):
-    """
-    Writes frames to an mp4 video file
-    :param file_path: Path to output video, must end with .mp4
-    :param frames: List of PIL.Image objects
-    :param fps: Desired frame rate
-    """
-
-    pil_to_numpy = lambda x: np.array(x)[:, :, ::-1]
-
-    w, h = frames[0].size
-    fourcc = cv.VideoWriter_fourcc('m', 'p', '4', 'v')
-    writer = cv.VideoWriter(file_path, fourcc, fps, (w, h))
-
-    for frame in frames:
-        writer.write(pil_to_numpy(frame))
-
-    writer.release()
-
-
-def interpolate_video(params):
+def interpolate_video(src_path, dest_path, model_path, input_fps=None, input_limit=None, batch_size=None):
 
     from src.model import Net
 
@@ -43,27 +22,27 @@ def interpolate_video(params):
 
     print('===> Loading model...')
     model = Net()
-    state_dict = torch.load(params.model)
+    state_dict = torch.load(model_path)
     model.load_state_dict(state_dict)
 
-    if isdir(params.src):
-        if params.inputfps is None:
+    if isdir(src_path):
+        if input_fps is None:
             raise Exception('Argument --inputfps is required if the source is a folder of frames')
         print('===> Reading frames...')
-        input_fps = params.inputfps
-        input_frames = load_tuples(params.src, 1, 1, paths_only=False)
+        input_frames = load_tuples(src_path, 1, 1, paths_only=False)
         input_frames = [x[0] for x in input_frames]
     else:
         print('===> Reading video...')
-        input_frames, input_fps = extract_frames(params.src)
-        if input_fps is None:
-            if params.inputfps is None:
+        input_frames, detected_fps = extract_frames(src_path)
+        if detected_fps is None:
+            if input_fps is None:
                 raise Exception('Argument --inputfps is required for this type of source')
-            else:
-                input_fps = params.inputfps
+        else:
+            input_fps = detected_fps
 
-    if params.inputlimit is not None:
-        input_frames = input_frames[:params.inputlimit]
+
+    if input_limit is not None:
+        input_frames = input_frames[:input_limit]
     n_input_frames = len(input_frames)
 
     if not torch.cuda.is_available():
@@ -72,9 +51,10 @@ def interpolate_video(params):
         print(f'===> CUDA not available. Cropping input as {crop_size}x{crop_size}...')
         input_frames = [crop(x) for x in input_frames]
 
-    batch_size = n_input_frames
-    if params.batchsize is not None and params.batchsize > 1:
-        batch_size = min(params.batchsize, batch_size)
+    if batch_size is not None and batch_size > 1:
+        batch_size = min(batch_size, n_input_frames)
+    else:
+        batch_size = n_input_frames
 
     # FIXME: Change this monstrosity to something more elegant
     n_batches = int(math.ceil(1.0 * n_input_frames / (batch_size - 1)))
@@ -94,36 +74,32 @@ def interpolate_video(params):
     output_frames = input_frames[:1]
     iters = len(middle_frames)
     for i in range(iters):
-        frame1 = input_frames[i]
         frame2 = input_frames[i+1]
         middle = middle_frames[i]
         output_frames += [middle, frame2]
         print('Frame {}/{} done'.format(i+1, iters))
 
-    if isdir(params.dest):
+    if isdir(dest_path):
         print('===> Saving frames...')
         for i, frame in enumerate(output_frames):
             file_name = '{:07d}.jpg'.format(i)
-            file_path = join(params.dest, file_name)
+            file_path = join(dest_path, file_name)
             frame.save(file_path)
     else:
         print('===> Saving video...')
-        _write_video(params.dest, output_frames, fps=(input_fps * 2))
+        write_video(dest_path, output_frames, fps=(input_fps * 2))
 
     tock_t = timer()
-
     print("Done. Took ~{}s".format(round(tock_t - tick_t)))
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Video Frame Interpolation')
-    parser.add_argument('--src', type=str, required=True, help='path to the video, either as a single file or as a folder')
-    parser.add_argument('--dest', type=str, required=True, help='output path of the resulting video, either as a single file or as a folder')
-    parser.add_argument('--model', type=str, required=True, help='path of the trained model')
-    parser.add_argument('--inputfps', type=int, required=False, default=None, help='frame-rate of the input. Only used if the frames are read from a folder')
-    parser.add_argument('--inputlimit', type=int, required=False, default=None, help='maximum number of processed input frames')
-    parser.add_argument('--batchsize', type=int, required=False, default=None, help='number of frames to be processed at the same time (i.e. number of interpolations in parallel +1)')
-
-    _params = parser.parse_args()
-    interpolate_video(_params)
+    parser.add_argument('--src', dest='src_path', type=str, required=True, help='path to the video, either as a single file or as a folder')
+    parser.add_argument('--dest', dest='dest_path', type=str, required=True, help='output path of the resulting video, either as a single file or as a folder')
+    parser.add_argument('--model', dest='model_path', type=str, required=True, help='path of the trained model')
+    parser.add_argument('--inputfps', dest='input_fps', type=int, required=False, default=None, help='frame-rate of the input. Only used if the frames are read from a folder')
+    parser.add_argument('--inputlimit', dest='input_limit', type=int, required=False, default=None, help='maximum number of processed input frames')
+    parser.add_argument('--batchsize', dest='batch_size', type=int, required=False, default=None, help='number of frames to be processed at the same time (i.e. number of interpolations in parallel +1)')
+    interpolate_video(**vars(parser.parse_args()))

@@ -6,7 +6,7 @@ import argparse
 from timeit import default_timer as timer
 from os.path import join
 from os import listdir
-from src.interpolate_video import _write_video
+from src.utilities import write_video
 from src.data_manager import is_image, load_img
 
 
@@ -25,7 +25,7 @@ def stitch_frames(src_path, dest_path, output_fps=None, drop_frames=False):
         frames = [load_img(x) for i, x in enumerate(frames)]
 
     print('===> Writing results...')
-    _write_video(dest_path, frames, output_fps)
+    write_video(dest_path, frames, output_fps)
 
     tock_t = timer()
     print("Done. Took ~{}s".format(round(tock_t - tick_t)))
