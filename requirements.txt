@@ -1,24 +1,24 @@
 ## Requirements ##
 
 # General
-numpy
-Pillow
+numpy == 1.14.3
+Pillow == 5.1.0
 imageio == 2.3.0
-six
-joblib
+six == 1.11.0
+joblib == 0.11
 tqdm
 
 # PyTorch
-torch >= 0.4.0
-torchvision
+torch == 0.4.0
+torchvision == 0.2.1
 
 # Required to build PyTorch extensions
-cffi
+cffi==1.11.5
 
 # Tensorboard
 tensorflow
-git+https://github.com/lanpa/tensorboard-pytorch@f76e92be99cb4415c03f474d77ab09915bce6d55
+tensorboardX
 
 # OpenCV
-opencv-python
-opencv-contrib-python
+opencv-python == 3.4.1.15
+opencv-contrib-python == 3.4.0.14
