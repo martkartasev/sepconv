@@ -87,15 +87,15 @@ def load_cached_patch(cached_patch):
 
 ############################################### DAVIS ###############################################
 
-def _get_davis_16(dataset_dir):
+def get_davis_16(dataset_dir):
     return _get_davis(dataset_dir, "DAVIS", "https://graphics.ethz.ch/Downloads/Data/Davis/DAVIS-data.zip")
 
 
-def _get_davis_17_test(dataset_dir):
+def get_davis_17_test(dataset_dir):
     return _get_davis(dataset_dir, "DAVIS17-test", "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-test-dev-480p.zip")
 
 
-def _get_davis_17(dataset_dir):
+def get_davis_17(dataset_dir):
     return _get_davis(dataset_dir, "DAVIS17", "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-trainval-480p.zip")
 
 
@@ -140,7 +140,7 @@ def _get_davis(dataset_dir, folder, url):
     return davis_dir
 
 
-def _tuples_from_davis(davis_dir, res='480p'):
+def tuples_from_davis(davis_dir, res='480p'):
     """
     Finds all images of the specified resolution from the DAVIS dataset. The found paths
     are returned as tuples of three elements.
@@ -173,7 +173,7 @@ def get_selected_davis(dataset_dir=None, res='480p'):
     if dataset_dir is None:
         dataset_dir = config.DATASET_DIR
 
-    davis16_dir = _get_davis_16(dataset_dir)
+    davis16_dir = get_davis_16(dataset_dir)
     root = join(davis16_dir, 'JPEGImages', res)
 
     tuples = [
@@ -420,8 +420,8 @@ def prepare_dataset(dataset_dir=None, force_rebuild=False):
 
         return patches
 
-    davis_dir = _get_davis_17(dataset_dir)
-    tuples = _tuples_from_davis(davis_dir, res='480p')
+    davis_dir = get_davis_17(dataset_dir)
+    tuples = tuples_from_davis(davis_dir, res='480p')
 
     patches = _extract_patches(
         tuples,
