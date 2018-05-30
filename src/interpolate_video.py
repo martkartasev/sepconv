@@ -21,9 +21,7 @@ def interpolate_video(src_path, dest_path, model_path, input_fps=None, input_lim
     tick_t = timer()
 
     print('===> Loading model...')
-    model = Net()
-    state_dict = torch.load(model_path)
-    model.load_state_dict(state_dict)
+    model = Net.from_file(model_path)
 
     if isdir(src_path):
         if input_fps is None:

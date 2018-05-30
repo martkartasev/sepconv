@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 from torch.autograd import Variable, gradcheck
-from torch.nn.modules.loss import _Loss, _assert_no_grad
 from src.separable_convolution import SeparableConvolutionSlow
 from libs.sepconv.SeparableConvolution import SeparableConvolution
 import src.config as config
@@ -15,7 +14,7 @@ import src.interpolate as interpol
 
 class Net(nn.Module):
 
-    def __init__(self):
+    def __init__(self, init_weights=True):
         super(Net, self).__init__()
 
         conv_kernel = (3, 3)
@@ -52,8 +51,28 @@ class Net(nn.Module):
         else:
             self.separable_conv = SeparableConvolutionSlow()
 
-        print('_weight_init')
-        self.apply(self._weight_init)
+        if init_weights:
+            print('Initializing weights...')
+            self.apply(self._weight_init)
+
+    @staticmethod
+    def from_file(file_path: str) -> nn.Module :
+        """
+        Initializes a new Net object from an existing model
+        :param file_path: path to the model.pth file
+        :return: Net object
+        """
+        model = Net(init_weights=False)
+        state_dict = torch.load(file_path)
+        model.load_state_dict(state_dict)
+        return model
+
+    def to_file(self, file_path: str):
+        """
+        Writes the current model to disk as a .pth file
+        :param file_path: path to the output model.pth file
+        """
+        torch.save(self.cpu().state_dict(), file_path)
 
     def interpolate(self, *args):
         return interpol.interpolate(self, *args)
@@ -61,9 +80,15 @@ class Net(nn.Module):
     def interpolate_f(self, *args):
         return interpol.interpolate_f(self, *args)
 
+    def interpolate_batch(self, *args):
+        return interpol.interpolate_batch(self, *args)
+
     def forward(self, x):
+
         i1 = x[:, :3]
         i2 = x[:, 3:6]
+
+        # ------------ Contraction ------------
 
         x = self.conv32(x)
         x = self.pool(x)
@@ -82,7 +107,7 @@ class Net(nn.Module):
 
         x = self.conv512x512(x)
 
-        # -----------------------------------------------------------------------
+        # ------------ Expansion ------------
 
         x = self.upsamp512(x)
         x += x512
@@ -99,7 +124,7 @@ class Net(nn.Module):
         x = self.upsamp64(x)
         x += x64
 
-        # --------------------------------
+        # ------------ Final branches ------------
 
         k2h = self.upconv51_1(x)
 
@@ -111,6 +136,8 @@ class Net(nn.Module):
 
         padded_i2 = self.pad(i2)
         padded_i1 = self.pad(i1)
+
+        # ------------ Local convolutions ------------
 
         return self.separable_conv(padded_i2, k2v, k2h) + self.separable_conv(padded_i1, k1v, k1h)
 

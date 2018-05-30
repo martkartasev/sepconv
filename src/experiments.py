@@ -50,13 +50,6 @@ def test_metrics(model, video_path=None, frames=None, output_folder=None):
     print(f'avg_ssim: {avg_ssim}, avg_psnr: {avg_psnr}')
 
 
-def load_model(path):
-    model = Net()
-    state_dict = torch.load(path)
-    model.load_state_dict(state_dict)
-    return model
-
-
 def test_wiz(model, output_folder=None):
     video_path = '/project/videos/see_you_again_540.mp4'
     test_metrics(model, video_path=video_path, output_folder=output_folder)
@@ -114,7 +107,7 @@ def test_linear_interp(validation_set=None):
 def test_all():
 
     print('===> Loading pure L1...')
-    # pure_l1 = load_model('./trained_models/last_pure_l1.pth')
+    # pure_l1 = Net.from_file('./trained_models/last_pure_l1.pth')
 
     print('===> Testing latest pure L1...')
     # test_on_validation_set(pure_l1)
@@ -125,8 +118,8 @@ def test_all():
     print('avg_ssim: 0.6868560968339443, avg_psnr: 26.697076902389526')
 
     print('===> Loading best models...')
-    # best_model_qualitative = load_model('./trained_models/best_model_qualitative.pth')
-    # best_model_quantitative = load_model('./trained_models/best_model_quantitative.pth')
+    # best_model_qualitative = Net.from_file('./trained_models/best_model_qualitative.pth')
+    # best_model_quantitative = Net.from_file('./trained_models/best_model_quantitative.pth')
 
     print('===> Testing Wiz (qualitative)...')
     # test_wiz(best_model_qualitative, output_folder='/project/exp/wiz_qual/')

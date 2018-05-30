@@ -44,12 +44,14 @@ training_data_loader = DataLoader(dataset=train_set, num_workers=config.NUM_WORK
 validation_data_loader = DataLoader(dataset=validation_set, num_workers=config.NUM_WORKERS,
                                     batch_size=config.BATCH_SIZE, shuffle=False)
 
-print('===> Building model...')
-model = Net().to(device)
 if config.START_FROM_EXISTING_MODEL is not None:
     print(f'===> Loading pre-trained model: {config.START_FROM_EXISTING_MODEL}')
-    state_dict = torch.load(config.START_FROM_EXISTING_MODEL)
-    model.load_state_dict(state_dict)
+    model = Net.from_file(config.START_FROM_EXISTING_MODEL)
+else:
+    print('===> Building model...')
+    model = Net()
+
+model.to(device)
 
 if config.LOSS == "l1":
     loss_function = nn.L1Loss()

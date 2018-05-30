@@ -102,9 +102,7 @@ if __name__ == '__main__':
     tick_t = timer()
 
     print('===> Loading model...')
-    model = Net()
-    state_dict = torch.load(params.model)
-    model.load_state_dict(state_dict)
+    model = Net.from_file(params.model)
 
     print('===> Interpolating...')
     frame_out = interpolate_f(model, params.prev, params.succ)
