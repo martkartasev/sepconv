@@ -4,6 +4,7 @@ src/config.py
 _ext/
 out/
 runs/
+trained_models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

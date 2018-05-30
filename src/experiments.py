@@ -126,14 +126,15 @@ def test_all():
 
     print('===> Loading best models...')
     # best_model_qualitative = load_model('./trained_models/best_model_qualitative.pth')
-    best_model_quantitative = load_model('./trained_models/best_model_quantitative.pth')
+    # best_model_quantitative = load_model('./trained_models/best_model_quantitative.pth')
 
     print('===> Testing Wiz (qualitative)...')
     # test_wiz(best_model_qualitative, output_folder='/project/exp/wiz_qual/')
     print('avg_ssim: 0.9658980375842044, avg_psnr: 37.27564642554835')
 
     print('===> Testing Wiz (quantitative)...')
-    test_wiz(best_model_quantitative, output_folder='/project/exp/wiz_quant/')
+    # test_wiz(best_model_quantitative, output_folder='/project/exp/wiz_quant/')
+    print('avg_ssim: 0.9638479389642415, avg_psnr: 36.52394056822124')
 
 if __name__ == '__main__':
     test_all()
