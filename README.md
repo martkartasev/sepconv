@@ -2,9 +2,9 @@
 
 A pretrained model can be downloaded from [here](https://people.kth.se/~carlora/sepconv/pretrained.pth).
 
-<p align="center">
-  <img alt="Final Result" src="https://people.kth.se/~carlora/sepconv/vimeo.png" width="auto" height="600">
-</p>
+<a href="https://vimeo.com/272619630" target="_blank">
+<img src="https://people.kth.se/~carlora/sepconv/vimeo.jpg" alt="Video">
+</a>
 
 ---
 
