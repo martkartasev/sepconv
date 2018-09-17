@@ -1,5 +1,9 @@
 # Video Frame Interpolation
 
+A pretrained model can be downloaded from [here](https://people.kth.se/~carlora/sepconv/pretrained.pth).
+
+---
+
 ## Installation
 
 ### Install pip3:
