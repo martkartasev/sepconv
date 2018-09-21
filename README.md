@@ -1,6 +1,10 @@
-# Video Frame Interpolation
+# Implementing Adaptive Separable Convolution for Video Frame Interpolation
 
-A pretrained model can be downloaded from [here](https://people.kth.se/~carlora/sepconv/pretrained.pth).
+This is a fully functional implementation of the work of Niklaus et al. \[[1](#references)\] on Adaptive Separable Convolution, which claims high quality results on the video frame interpolation task. We apply the same network structure trained on a smaller dataset and experiment with various different loss functions, in order to determine the optimal approach in data-scarce scenarios.
+
+For detailed information, please see our report on [arXiv:1809.07759](https://arxiv.org/abs/1809.07759).
+
+The video below is an example of the capabilities of this implementation. Our pretrained model (used in this instance) can be downloaded from [here](https://people.kth.se/~carlora/sepconv/pretrained.pth).
 
 <a href="https://vimeo.com/272619630" target="_blank">
 <img src="https://people.kth.se/~carlora/sepconv/vimeo.jpg" alt="Video">
@@ -9,6 +13,7 @@ A pretrained model can be downloaded from [here](https://people.kth.se/~carlora/
 ---
 
 ## Installation
+> Note that the following instructions apply in the case of a fresh Ubuntu 17 machine with a CUDA-enabled GPU. In other scenarios (ex. if you want to work in a virtual environment or prefer to use the CPU), you may need to skip or change some of the commands.
 
 ### Install pip3:
 ```
