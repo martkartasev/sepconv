@@ -54,7 +54,7 @@ sudo pip3 install -r ./path/to/requirements.txt
 
 ### Move to the project directory:
 ```
-cd ./DeepLearningFrameInterpolation
+cd ./sepconv
 ```
 
 ### Create a new configuration file:
@@ -76,7 +76,7 @@ This project is released under the MIT license. See `LICENSE` for more informati
 
 The following dependencies are bundled with this project, but are under terms of a separate license:
 * [pytorch-sepconv](https://github.com/sniklaus/pytorch-sepconv) by [sniklaus](https://github.com/sniklaus)
-* [CUDA Gradient for sepconv](https://github.com/ekgibbons/pytorch-sepconv)
+* [CUDA Gradient for sepconv](https://github.com/ekgibbons/pytorch-sepconv) by [ekgibbons](https://github.com/ekgibbons)
 
 ## References
 
